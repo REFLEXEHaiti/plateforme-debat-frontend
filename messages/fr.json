@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "debats": "Débats",
+    "formations": "Formations",
+    "lives": "Lives",
+    "dashboard": "Tableau de bord",
+    "connexion": "Connexion",
+    "inscription": "S'inscrire",
+    "deconnexion": "Déconnexion"
+  },
+  "auth": {
+    "connexion_titre": "Connexion",
+    "inscription_titre": "Créer un compte",
+    "email": "Email",
+    "mot_de_passe": "Mot de passe",
+    "se_connecter": "Se connecter",
+    "sinscrire": "S'inscrire",
+    "prenom": "Prénom",
+    "nom": "Nom"
+  },
+  "debats": {
+    "titre": "Débats disponibles",
+    "nouveau": "Nouveau débat",
+    "participer": "Participer",
+    "aucun": "Aucun débat disponible"
+  },
+  "tournois": {
+    "titre": "Tournois",
+    "sinscrire": "S'inscrire au tournoi",
+    "calendrier": "Calendrier des matchs",
+    "champion": "Champion"
+  },
+  "gamification": {
+    "points": "Points",
+    "niveau": "Niveau",
+    "badges": "Badges",
+    "classement": "Classement"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "debats": "Debates",
+    "formations": "Courses",
+    "lives": "Live",
+    "tournois": "Tournaments",
+    "galerie": "Gallery",
+    "contact": "Contact",
+    "tableau_bord": "Dashboard",
+    "connexion": "Login",
+    "inscription": "Sign up",
+    "deconnexion": "Logout"
+  },
+  "hero": {
+    "badge": "HAITIAN DEBATE PLATFORM",
+    "titre1": "Master the",
+    "titre2": "art of debate",
+    "titre3": "in Haiti",
+    "description": "Compete, develop critical thinking and join the community of Haitian debaters.",
+    "btn_commencer": "Get started",
+    "btn_connexion": "Sign in",
+    "btn_debats": "View debates",
+    "stats_debatteurs": "Debaters",
+    "stats_formations": "Courses",
+    "stats_tournois": "Tournaments",
+    "sponsor_partenaire": "Partner",
+    "sponsor_devenir": "Become a partner →",
+    "today": "Today",
+    "debats_actifs": "active debates",
+    "en_ligne": "online"
+  },
+  "debats": {
+    "titre": "Debates",
+    "ouverts": "open",
+    "programmes": "scheduled",
+    "badge_ouvert": "Open",
+    "badge_programme": "Scheduled",
+    "badge_ferme": "Closed",
+    "participer": "Join",
+    "voir_sujet": "View topic",
+    "rejoindre": "Join",
+    "aucun": "No debates in this category",
+    "filtres": {
+      "tous": "All",
+      "ouverts": "💬 Open debates",
+      "programmes": "📅 Scheduled"
+    }
+  },
+  "formations": {
+    "titre": "Courses",
+    "gratuit": "Free",
+    "commencer": "Start",
+    "inscrire": "Enroll",
+    "apercu": "Preview",
+    "certificat": "Completion certificate",
+    "support_ia": "AI support included",
+    "filtres": {
+      "tous": "All",
+      "gratuits": "🆓 Free",
+      "payants": "💳 Paid (35 USD)"
+    }
+  },
+  "auth": {
+    "connexion_titre": "Sign in",
+    "inscription_titre": "Create an account",
+    "email": "Email address",
+    "mot_de_passe": "Password",
+    "prenom": "First name",
+    "nom": "Last name",
+    "btn_connexion": "Sign in",
+    "btn_inscription": "Create my account",
+    "pas_compte": "No account yet?",
+    "deja_compte": "Already have an account?",
+    "connexion_link": "Sign in"
+  },
+  "commun": {
+    "chargement": "Loading...",
+    "enregistrement": "Saving...",
+    "annuler": "Cancel",
+    "envoyer": "Send",
+    "voir_plus": "See more",
+    "retour": "← Back",
+    "rejoindre_communaute": "Join the community",
+    "creer_compte": "Create a free account",
+    "pret_debattre": "Ready to debate?",
+    "rejoindre_desc": "Join the Haitian debaters community. Free to start."
+  }
+}

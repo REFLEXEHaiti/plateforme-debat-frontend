@@ -1,0 +1,39 @@
+{
+  "nav": {
+    "debats": "Deba",
+    "formations": "Fòmasyon",
+    "lives": "Dirèk",
+    "dashboard": "Tablo bò",
+    "connexion": "Koneksyon",
+    "inscription": "Enskri",
+    "deconnexion": "Dekonekte"
+  },
+  "auth": {
+    "connexion_titre": "Koneksyon",
+    "inscription_titre": "Kreye yon kont",
+    "email": "Imèl",
+    "mot_de_passe": "Modpas",
+    "se_connecter": "Konekte",
+    "sinscrire": "Enskri",
+    "prenom": "Prenon",
+    "nom": "Non"
+  },
+  "debats": {
+    "titre": "Deba ki disponib",
+    "nouveau": "Nouvo deba",
+    "participer": "Patisipe",
+    "aucun": "Pa gen deba disponib"
+  },
+  "tournois": {
+    "titre": "Touwa",
+    "sinscrire": "Enskri nan touwa",
+    "calendrier": "Kalandriye match",
+    "champion": "Chanpyon"
+  },
+  "gamification": {
+    "points": "Pwen",
+    "niveau": "Nivo",
+    "badges": "Badj",
+    "classement": "Klasman"
+  }
+}

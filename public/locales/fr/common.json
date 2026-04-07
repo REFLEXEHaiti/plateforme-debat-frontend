@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "debats": "Débats",
+    "formations": "Formations",
+    "lives": "Lives",
+    "tournois": "Tournois",
+    "galerie": "Galerie",
+    "contact": "Contact",
+    "tableau_bord": "Tableau de bord",
+    "connexion": "Connexion",
+    "inscription": "S'inscrire",
+    "deconnexion": "Déconnexion"
+  },
+  "hero": {
+    "badge": "PLATEFORME DE DÉBAT EN HAÏTI",
+    "titre1": "Formez-vous à",
+    "titre2": "l'art du débat",
+    "titre3": "en Haïti",
+    "description": "Participez aux compétitions, développez votre pensée critique et rejoignez la communauté des débatteurs haïtiens.",
+    "btn_commencer": "Commencer maintenant",
+    "btn_connexion": "Se connecter",
+    "btn_debats": "Voir les débats",
+    "stats_debatteurs": "Débatteurs",
+    "stats_formations": "Formations",
+    "stats_tournois": "Tournois",
+    "sponsor_partenaire": "Partenaire",
+    "sponsor_devenir": "Devenir partenaire →",
+    "today": "Aujourd'hui",
+    "debats_actifs": "débats actifs",
+    "en_ligne": "en ligne"
+  },
+  "debats": {
+    "titre": "Débats",
+    "ouverts": "ouvert",
+    "programmes": "programmé",
+    "badge_ouvert": "Ouvert",
+    "badge_programme": "Programmé",
+    "badge_ferme": "Fermé",
+    "participer": "Participer",
+    "voir_sujet": "Voir le sujet",
+    "rejoindre": "Rejoindre",
+    "aucun": "Aucun débat dans cette catégorie",
+    "filtres": {
+      "tous": "Tous",
+      "ouverts": "💬 Débats ouverts",
+      "programmes": "📅 Programmés"
+    }
+  },
+  "formations": {
+    "titre": "Formations",
+    "gratuit": "Gratuit",
+    "commencer": "Commencer",
+    "inscrire": "S'inscrire",
+    "apercu": "Aperçu",
+    "certificat": "Certificat de complétion",
+    "support_ia": "Support IA inclus",
+    "filtres": {
+      "tous": "Tous",
+      "gratuits": "🆓 Gratuits",
+      "payants": "💳 Payants (35 USD)"
+    }
+  },
+  "auth": {
+    "connexion_titre": "Se connecter",
+    "inscription_titre": "Créer un compte",
+    "email": "Adresse e-mail",
+    "mot_de_passe": "Mot de passe",
+    "prenom": "Prénom",
+    "nom": "Nom",
+    "btn_connexion": "Se connecter",
+    "btn_inscription": "Créer mon compte",
+    "pas_compte": "Pas encore de compte ?",
+    "deja_compte": "Déjà un compte ?",
+    "connexion_link": "Se connecter"
+  },
+  "commun": {
+    "chargement": "Chargement...",
+    "enregistrement": "Enregistrement...",
+    "annuler": "Annuler",
+    "envoyer": "Envoyer",
+    "voir_plus": "Voir plus",
+    "retour": "← Retour",
+    "rejoindre_communaute": "Rejoignez la communauté",
+    "creer_compte": "Créer un compte gratuitement",
+    "pret_debattre": "Prêt à débattre ?",
+    "rejoindre_desc": "Rejoignez la communauté des débatteurs haïtiens. Gratuit pour commencer."
+  }
+}

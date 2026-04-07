@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "debats": "Débat yo",
+    "formations": "Fòmasyon yo",
+    "lives": "Dirèk",
+    "tournois": "Konkou yo",
+    "galerie": "Galri",
+    "contact": "Kontakte",
+    "tableau_bord": "Tablo bò",
+    "connexion": "Konekte",
+    "inscription": "Enskri",
+    "deconnexion": "Dekonekte"
+  },
+  "hero": {
+    "badge": "PLATFÒM DÉBAT AN AYITI",
+    "titre1": "Fòme tèt ou nan",
+    "titre2": "atizay débat",
+    "titre3": "nan Ayiti",
+    "description": "Patisipe nan konpetisyon yo, devlope panse kritik ou epi rejwenn kominote debatè ayisyen yo.",
+    "btn_commencer": "Kòmanse kounye a",
+    "btn_connexion": "Konekte",
+    "btn_debats": "Wè débat yo",
+    "stats_debatteurs": "Debatè",
+    "stats_formations": "Fòmasyon",
+    "stats_tournois": "Konkou",
+    "sponsor_partenaire": "Patnè",
+    "sponsor_devenir": "Vin patnè →",
+    "today": "Jodi a",
+    "debats_actifs": "débat aktif",
+    "en_ligne": "anliy"
+  },
+  "debats": {
+    "titre": "Débat yo",
+    "ouverts": "ouvè",
+    "programmes": "pwograme",
+    "badge_ouvert": "Ouvè",
+    "badge_programme": "Pwograme",
+    "badge_ferme": "Fèmen",
+    "participer": "Patisipe",
+    "voir_sujet": "Wè sijè a",
+    "rejoindre": "Rejwenn",
+    "aucun": "Pa gen débat nan kategori sa a",
+    "filtres": {
+      "tous": "Tout",
+      "ouverts": "💬 Débat ouvè",
+      "programmes": "📅 Pwograme"
+    }
+  },
+  "formations": {
+    "titre": "Fòmasyon yo",
+    "gratuit": "Gratis",
+    "commencer": "Kòmanse",
+    "inscrire": "Enskri",
+    "apercu": "Apèsi",
+    "certificat": "Sètifika konpletaj",
+    "support_ia": "Sipò IA enkli",
+    "filtres": {
+      "tous": "Tout",
+      "gratuits": "🆓 Gratis",
+      "payants": "💳 Peye (35 USD)"
+    }
+  },
+  "auth": {
+    "connexion_titre": "Konekte",
+    "inscription_titre": "Kreye yon kont",
+    "email": "Adrès imèl",
+    "mot_de_passe": "Modpas",
+    "prenom": "Prenon",
+    "nom": "Non",
+    "btn_connexion": "Konekte",
+    "btn_inscription": "Kreye kont mwen",
+    "pas_compte": "Pa gen kont toujou ?",
+    "deja_compte": "Deja gen yon kont ?",
+    "connexion_link": "Konekte"
+  },
+  "commun": {
+    "chargement": "Ap chaje...",
+    "enregistrement": "Ap anrejistre...",
+    "annuler": "Anile",
+    "envoyer": "Voye",
+    "voir_plus": "Wè plis",
+    "retour": "← Retounen",
+    "rejoindre_communaute": "Rejwenn kominote a",
+    "creer_compte": "Kreye yon kont gratis",
+    "pret_debattre": "Pare pou débate ?",
+    "rejoindre_desc": "Rejwenn kominote debatè ayisyen yo. Gratis pou kòmanse."
+  }
+}

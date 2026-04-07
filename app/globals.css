@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE CONTAINER GLOBAL
+═══════════════════════════════════════════════════ */
+.page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE TABLES
+═══════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  table { font-size: 12px; }
+  th, td { padding: 8px 6px !important; }
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE GRIDS — toutes les pages
+═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Cards grilles */
+  .grid-cols-3 { grid-template-columns: 1fr !important; }
+  .grid-cols-2 { grid-template-columns: 1fr !important; }
+
+  /* Titres adaptatifs */
+  h1 { font-size: clamp(22px, 6vw, 36px) !important; }
+  h2 { font-size: clamp(18px, 5vw, 28px) !important; }
+
+  /* Padding pages */
+  .px-8 { padding-left: 16px !important; padding-right: 16px !important; }
+  .py-16 { padding-top: 32px !important; padding-bottom: 32px !important; }
+}
+
+@media (max-width: 480px) {
+  /* Modaux plein écran */
+  [style*="maxWidth: '460px'"],
+  [style*="maxWidth: '480px'"],
+  [style*="maxWidth: '520px'"] {
+    max-width: calc(100vw - 32px) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   NAVBAR — barre profil sous navbar
+═══════════════════════════════════════════════════ */
+.profil-bar {
+  background: rgba(10,15,30,0.98);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 6px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .profil-bar { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+/* ═══════════════════════════════════════════════════
+   UTILITAIRES MOBILE
+═══════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+  .full-mobile { width: 100% !important; }
+}
