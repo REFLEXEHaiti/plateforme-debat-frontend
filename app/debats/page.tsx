@@ -279,7 +279,6 @@ export default function PageDebats() {
               ))}
             </tbody>
           </table>
-          </div>
         </div>
 
         {modalOuvert && (

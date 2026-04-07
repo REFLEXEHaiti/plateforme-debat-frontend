@@ -468,7 +468,6 @@ export default function PageTournois() {
               ))}
             </tbody>
           </table>
-          </div>
         </div>
       </div>
 

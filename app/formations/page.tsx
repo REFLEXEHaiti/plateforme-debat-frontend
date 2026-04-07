@@ -680,7 +680,6 @@ export default function PageFormations() {
                 ))}
               </tbody>
             </table>
-            </div>
           )}
         </div>
       </div>
