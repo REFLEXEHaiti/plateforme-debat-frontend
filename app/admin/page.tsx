@@ -85,6 +85,7 @@ export default function PageAdmin() {
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [formations, setFormations] = useState<any[]>([]);
   const [debats, setDebats] = useState<any[]>([]);
+  const [abonnements, setAbonnements] = useState<any[]>([]);
 
   const [formLive, setFormLive] = useState({ titre: '', description: '', dateDebut: '', youtubeUrl: '', plateforme: 'youtube', statut: 'EN_DIRECT' });
   const [formFormation, setFormFormation] = useState({ titre: '', description: '', niveau: 'DEBUTANT' });
@@ -96,18 +97,20 @@ export default function PageAdmin() {
   useEffect(() => {
     const charger = async () => {
       try {
-        const [m, l, s, f, d] = await Promise.all([
+        const [m, l, s, f, d, a] = await Promise.all([
           api.get('/analytics/metriques'),
           api.get('/lives'),
           api.get('/sponsoring/sponsors/tous'),
           api.get('/cours'),
           api.get('/debats'),
+          api.get("/paiements/admin/liste"),
         ]);
         setMetriques(m.data);
         setLives(Array.isArray(l.data) ? l.data : []);
         setSponsors(Array.isArray(s.data) ? s.data : []);
         setFormations(Array.isArray(f.data) ? f.data : []);
         setDebats(d.data?.debats || []);
+        setAbonnements(Array.isArray(a.data) ? a.data : []);
       } catch {}
     };
     charger();
