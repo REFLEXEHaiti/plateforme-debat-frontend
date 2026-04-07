@@ -271,7 +271,7 @@ export default function PageTournois() {
                   <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">📍 {tournoi.lieu}</span>
                 )}
               </div>
-              <h3 className="font-bold text-gray-900 text-base mb-1">{tournoi.nom}</h3>
+              <a href={"/tournois/" + tournoi.id} className="hover:text-blue-700 cursor-pointer"><h3 className="font-bold text-gray-900 text-base mb-1">{tournoi.nom}</h3></a>
               <p className="text-gray-500 text-sm mb-3 line-clamp-2">{tournoi.description}</p>
               <div className="flex gap-4 text-xs text-gray-400 flex-wrap">
                 <span>👥 {equipesTournoi.length}/{tournoi.maxEquipes} équipes</span>
