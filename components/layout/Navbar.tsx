@@ -23,7 +23,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default function Navbar() {
-  const { estConnecte, utilisateur } = useAuthStore();
+  const { estConnecte, utilisateur, _hasHydrated } = useAuthStore();
   const { seDeconnecter } = useAuth();
   const { t } = useTranslation();
   const pathname = usePathname();
@@ -46,17 +46,17 @@ export default function Navbar() {
   useEffect(() => {
     if (!menuOuvert) return;
     const handler = () => setMenuOuvert(false);
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
+    const timer = setTimeout(() => document.addEventListener('click', handler), 10);
+    return () => { clearTimeout(timer); document.removeEventListener('click', handler); };
   }, [menuOuvert]);
 
   const liensNav = [
-    { label: t('nav.debats'),     href: '/debats' },
-    { label: t('nav.formations'), href: '/formations' },
-    { label: t('nav.lives'),      href: '/lives' },
-    { label: t('nav.tournois'),   href: '/tournois' },
-    { label: t('nav.galerie'),    href: '/galerie' },
-    { label: t('nav.contact'),    href: '/contact' },
+    { label: 'Débats',     href: '/debats' },
+    { label: 'Formations', href: '/formations' },
+    { label: 'Lives',      href: '/lives' },
+    { label: 'Tournois',   href: '/tournois' },
+    { label: 'Galerie',    href: '/galerie' },
+    { label: 'Contact',    href: '/contact' },
   ];
 
   const initiales = utilisateur
@@ -132,7 +132,7 @@ export default function Navbar() {
           <div className="desktop-nav" style={{ alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <SelecteurLangue />
 
-            {estConnecte ? (
+            {!_hasHydrated ? null : estConnecte ? (
               <>
                 {utilisateur?.role === 'ADMIN' && (
                   <Link href="/admin" style={{
@@ -275,7 +275,7 @@ export default function Navbar() {
         </div>
 
         {/* ─── BARRE PROFIL — desktop seulement, sous la navbar ─── */}
-        {estConnecte && (
+        {_hasHydrated && estConnecte && (
           <div className="profil-bar" style={{
             background: 'rgba(10,15,30,0.95)',
             borderTop: '1px solid rgba(255,255,255,0.04)',
@@ -380,7 +380,7 @@ export default function Navbar() {
 
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '10px 0' }} />
 
-          {estConnecte ? (
+          {!_hasHydrated ? null : estConnecte ? (
             <>
               {utilisateur?.role === 'ADMIN' && (
                 <Link href="/admin" style={{ display: 'block', padding: '13px 16px', borderRadius: '10px', color: '#7B61FF', textDecoration: 'none', fontSize: '15px', fontWeight: 600 }}>
