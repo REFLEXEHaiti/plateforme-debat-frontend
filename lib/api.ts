@@ -4,8 +4,12 @@
 
 import axios from 'axios';
 
+// CORRECTION : le backend utilise app.setGlobalPrefix('api')
+// donc toutes les routes sont /api/... — on l'ajoute ici une seule fois
+const baseURL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '') + '/api';
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,7 +17,6 @@ const api = axios.create({
 
 // Intercepteur — ajoute le token JWT avant chaque requête
 api.interceptors.request.use((config) => {
-  // Récupère le token depuis le localStorage
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('access_token');
     if (token) {
@@ -32,7 +35,10 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         localStorage.removeItem('access_token');
         localStorage.removeItem('utilisateur');
-        window.location.href = '/auth/connexion';
+        // Éviter la boucle de redirect si déjà sur la page de connexion
+        if (!window.location.pathname.startsWith('/auth/')) {
+          window.location.href = '/auth/connexion';
+        }
       }
     }
     return Promise.reject(error);

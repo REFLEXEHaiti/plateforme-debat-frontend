@@ -1,3 +1,9 @@
+// store/authStore.ts
+// CORRECTION : on supprime la méthode initialiser() redondante.
+// Zustand `persist` + `onRehydrateStorage` recharge déjà l'état depuis
+// localStorage automatiquement — inutile de le faire une deuxième fois
+// dans InitAuth. Cela évitait une condition de course au démarrage.
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { sauvegarderSession, supprimerSession } from '@/lib/auth';
@@ -18,7 +24,6 @@ interface AuthStore {
   setHasHydrated: (val: boolean) => void;
   connecter: (token: string, utilisateur: Utilisateur) => void;
   deconnecter: () => void;
-  initialiser: () => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -40,19 +45,6 @@ export const useAuthStore = create<AuthStore>()(
         supprimerSession();
         set({ token: null, utilisateur: null, estConnecte: false });
       },
-
-      initialiser: () => {
-        if (typeof window === 'undefined') return;
-        const token = localStorage.getItem('access_token');
-        const userData = localStorage.getItem('utilisateur');
-        if (token && userData) {
-          set({
-            token,
-            utilisateur: JSON.parse(userData),
-            estConnecte: true,
-          });
-        }
-      },
     }),
     {
       name: 'auth-storage',
@@ -63,6 +55,7 @@ export const useAuthStore = create<AuthStore>()(
         estConnecte: state.estConnecte,
       }),
       onRehydrateStorage: () => (state) => {
+        // Seul point de rehydratation — plus besoin d'InitAuth
         state?.setHasHydrated(true);
       },
     }
