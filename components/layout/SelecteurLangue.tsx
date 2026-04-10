@@ -21,7 +21,6 @@ export default function SelecteurLangue() {
   useEffect(() => {
     const saved = localStorage.getItem('debat-ht-lang') || 'fr';
     setLangueActuelle(saved);
-    // Masquer bandeau Google Translate
     const style = document.createElement('style');
     style.id = 'gt-hide-style';
     style.textContent = `.goog-te-banner-frame,.goog-te-gadget,.skiptranslate,#google_translate_element{display:none!important}body{top:0!important}`;
@@ -54,8 +53,6 @@ export default function SelecteurLangue() {
 
     setEnCours(true);
     if (appliquer(google)) { setEnCours(false); return; }
-
-    // Retry si Google Translate pas encore chargé
     const iv = setInterval(() => {
       tentatives.current++;
       if (appliquer(google) || tentatives.current > 25) {
@@ -69,7 +66,6 @@ export default function SelecteurLangue() {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* ✅ Bouton visible sur fond clair — texte foncé, fond beige */}
       <button
         onClick={() => setOuvert(o => !o)}
         aria-label="Changer de langue"
@@ -122,7 +118,7 @@ export default function SelecteurLangue() {
                   <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: "'Helvetica Neue',Arial,sans-serif" }}>{l.nom}</div>
                   <div style={{ fontSize: 10, color: '#9CA3AF', fontFamily: "'Helvetica Neue',Arial,sans-serif" }}>{l.label}</div>
                 </div>
-                {l.code === langueActuelle && <span style={{ color: 'var(--red)', fontWeight: 800 }}>✓</span>}
+                {l.code === langueActuelle && <span style={{ color: '#C0321A', fontWeight: 800 }}>✓</span>}
               </button>
             ))}
           </div>
