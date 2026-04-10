@@ -1,101 +1,94 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import api from '@/lib/api';
 
-const MOCK_CLASSEMENT = [
-  { userId:'u1', points:2840, niveau:12, user:{ prenom:'Marie',  nom:'Joseph',  role:'APPRENANT' }},
-  { userId:'u2', points:2180, niveau:10, user:{ prenom:'Paul',   nom:'Duval',   role:'APPRENANT' }},
-  { userId:'u3', points:1950, niveau:9,  user:{ prenom:'Sarah',  nom:'Luc',     role:'FORMATEUR' }},
-  { userId:'u4', points:1720, niveau:8,  user:{ prenom:'René',   nom:'Fils',    role:'APPRENANT' }},
-  { userId:'u5', points:1480, niveau:7,  user:{ prenom:'Jean',   nom:'Charles', role:'APPRENANT' }},
-  { userId:'u6', points:1230, niveau:6,  user:{ prenom:'Anne',   nom:'Michel',  role:'APPRENANT' }},
-  { userId:'u7', points:980,  niveau:5,  user:{ prenom:'Patrick',nom:'Fils',    role:'APPRENANT' }},
+const MOCK = [
+  { rang: 1, prenom: 'Jean', nom: 'Pierre', ville: 'Port-au-Prince', points: 1240, debats: 28, badges: ['🏆', '🎖️'] },
+  { rang: 2, prenom: 'Marie', nom: 'Paul', ville: 'Cap-Haïtien', points: 980, debats: 22, badges: ['🎖️'] },
+  { rang: 3, prenom: 'Louis', nom: 'René', ville: 'Pétion-Ville', points: 875, debats: 19, badges: ['🎖️'] },
+  { rang: 4, prenom: 'Anne', nom: 'Joseph', ville: 'Jacmel', points: 720, debats: 16, badges: [] },
+  { rang: 5, prenom: 'Marc', nom: 'Dupont', ville: 'Les Cayes', points: 640, debats: 14, badges: [] },
+  { rang: 6, prenom: 'Clara', nom: 'René', ville: 'Gonaïves', points: 590, debats: 12, badges: [] },
+  { rang: 7, prenom: 'Patrick', nom: 'Fils', ville: 'Port-au-Prince', points: 510, debats: 11, badges: [] },
+  { rang: 8, prenom: 'Nadège', nom: 'Saint', ville: 'Cap-Haïtien', points: 440, debats: 9, badges: [] },
 ];
 
-const ROLE_LABEL: Record<string,string> = {
-  ADMIN:'Admin', FORMATEUR:'Formateur', APPRENANT:'Apprenant', SPECTATEUR:'Spectateur',
-};
-
-const initiales = (p:string,n:string) => (p[0]||'')+(n[0]||'');
-
 export default function PageClassement() {
-  const [classement, setClassement] = useState<any[]>(MOCK_CLASSEMENT);
+  const [classement, setClassement] = useState(MOCK);
+  const [periode, setPeriode] = useState<'semaine' | 'mois' | 'general'>('general');
 
   useEffect(() => {
-    api.get('/gamification/classement?limite=20')
-      .then(({ data }) => { if (Array.isArray(data) && data.length) setClassement(data); })
-      .catch(() => {});
+    api.get('/gamification/classement').then(({ data }) => { if (Array.isArray(data) && data.length) setClassement(data); }).catch(() => {});
   }, []);
 
-  const top3  = classement.slice(0, 3);
+  const podium = classement.slice(0, 3);
   const reste = classement.slice(3);
 
-  const podiumOrder = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3;
-
   return (
-    <ProtectedRoute>
-      <div style={{ maxWidth:'900px', margin:'0 auto' }}>
-        {/* Header */}
-        <div style={{ padding:'48px 40px 24px', borderBottom:'1px solid var(--line2)' }}>
-          <h1 style={{ fontFamily:'Georgia,serif', fontSize:'30px', fontWeight:'normal', letterSpacing:'-.015em', marginBottom:'4px' }}>
-            Classement général
-          </h1>
-          <p style={{ fontFamily:"'Helvetica Neue',Arial,sans-serif", fontSize:'12px', color:'var(--muted)' }}>
-            Les meilleurs débatteurs — Saison 2026
-          </p>
-        </div>
-
-        {/* Stats */}
-        <div className="dh-stat-grid" style={{ margin:'0', borderTop:'none', borderLeft:'none', borderRight:'none' }}>
-          {[['500+','Débatteurs'],['347','Débats'],['18','Tournois'],['50+','Formations']].map(([n,l])=>(
-            <div key={l} className="dh-stat-card">
-              <div className="dh-stat-card-n">{n}</div>
-              <div className="dh-stat-card-l">{l}</div>
-            </div>
+    <div style={{ background: 'var(--page)', minHeight: '100vh' }}>
+      {/* Hero */}
+      <div style={{ background: 'linear-gradient(135deg, #0D1B2A, #1B263B)', padding: 'clamp(32px,5vw,56px) clamp(20px,5vw,80px)', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(26px,4vw,48px)', fontWeight: 'normal', color: 'white', marginBottom: 12 }}>Classement</h1>
+        <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 16, color: 'rgba(255,255,255,0.6)', maxWidth: 480, margin: '0 auto 28px' }}>
+          Les meilleurs débatteurs de la communauté Débat Haïti
+        </p>
+        {/* Filtres période */}
+        <div style={{ display: 'inline-flex', gap: 0, background: 'rgba(255,255,255,0.08)', borderRadius: 100, padding: 4 }}>
+          {[{ id: 'semaine', label: 'Cette semaine' }, { id: 'mois', label: 'Ce mois' }, { id: 'general', label: 'Général' }].map(p => (
+            <button key={p.id} onClick={() => setPeriode(p.id as any)} style={{ padding: '8px 20px', borderRadius: 100, border: 'none', background: periode === p.id ? 'white' : 'transparent', color: periode === p.id ? 'var(--ink)' : 'rgba(255,255,255,0.6)', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>
+              {p.label}
+            </button>
           ))}
         </div>
+      </div>
 
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: 'clamp(24px,4vw,48px) clamp(20px,5vw,80px)' }}>
         {/* Podium top 3 */}
-        {top3.length >= 3 && (
-          <div className="dh-podium" style={{ marginTop:'1px' }}>
-            {podiumOrder.map((item, i) => {
-              const rang = classement.indexOf(item) + 1;
-              const isPremier = rang === 1;
-              return (
-                <div key={item.userId} className={`dh-pod dh-pod-${rang}`}>
-                  <div className="dh-pod-rank">{String(rang).padStart(2,'0')}</div>
-                  <div className="dh-pod-av">{initiales(item.user.prenom, item.user.nom)}</div>
-                  <div className="dh-pod-name">{item.user.prenom} {item.user.nom}</div>
-                  <div className="dh-pod-pts">{item.points.toLocaleString('fr-FR')}</div>
-                  <div className="dh-pod-lbl">Points · Niveau {item.niveau}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Reste de la liste */}
-        <div className="dh-rank-list">
-          {reste.map((item, i) => {
-            const rang = i + 4;
-            const av = initiales(item.user.prenom, item.user.nom);
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 40, alignItems: 'end' }}>
+          {[podium[1], podium[0], podium[2]].map((p, i) => {
+            if (!p) return <div key={i}/>;
+            const rang = i === 0 ? 2 : i === 1 ? 1 : 3;
+            const hauteur = rang === 1 ? 160 : rang === 2 ? 130 : 110;
+            const medalColors = ['#C0C0C0', '#FFD700', '#CD7F32'];
+            const medal = rang === 1 ? medalColors[1] : rang === 2 ? medalColors[0] : medalColors[2];
             return (
-              <div key={item.userId} className="dh-rank-row">
-                <div className="dh-rank-n">{rang}</div>
-                <div className="dh-rank-av" style={{ background:'var(--page3)', color:'var(--ink)' }}>{av}</div>
-                <div style={{ flex:1 }}>
-                  <div className="dh-rank-name">{item.user.prenom} {item.user.nom}</div>
-                  <div className="dh-rank-role">Niveau {item.niveau} · {ROLE_LABEL[item.user.role]||item.user.role}</div>
+              <div key={p.rang} style={{ textAlign: 'center' }}>
+                {/* Avatar */}
+                <div style={{ width: rang === 1 ? 72 : 56, height: rang === 1 ? 72 : 56, borderRadius: '50%', background: `linear-gradient(135deg, ${medal}, ${medal}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: rang === 1 ? 24 : 18, fontWeight: 700, color: 'white', fontFamily: 'Georgia,serif', margin: '0 auto 8px', border: `3px solid ${medal}` }}>
+                  {(p.prenom?.[0] || '') + (p.nom?.[0] || '')}
                 </div>
-                <div className="dh-rank-pts">{item.points.toLocaleString('fr-FR')}</div>
-                <div style={{ fontFamily:"'Helvetica Neue',Arial,sans-serif", fontSize:'10px', color:'var(--muted)', marginLeft:'4px' }}>pts</div>
+                <p style={{ fontFamily: 'Georgia,serif', fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 2 }}>{p.prenom} {p.nom}</p>
+                <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>📍 {p.ville}</p>
+                {/* Barre */}
+                <div style={{ height: hauteur, background: `linear-gradient(to top, ${medal}40, ${medal}20)`, border: `2px solid ${medal}40`, borderRadius: '8px 8px 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 12 }}>
+                  <div style={{ fontFamily: 'Georgia,serif', fontSize: rang === 1 ? 28 : 22, fontWeight: 700, color: medal }}>{rang === 1 ? '🥇' : rang === 2 ? '🥈' : '🥉'}</div>
+                  <div style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{p.points} pts</div>
+                </div>
               </div>
             );
           })}
         </div>
+
+        {/* Tableau reste */}
+        <div style={{ background: 'white', border: '1px solid var(--line2)', borderRadius: 14, overflow: 'hidden' }}>
+          {reste.map((p, i) => (
+            <div key={p.rang} style={{ display: 'grid', gridTemplateColumns: '48px 1fr auto', gap: 0, padding: '14px 20px', borderBottom: i < reste.length - 1 ? '1px solid var(--line2)' : 'none', background: i % 2 === 0 ? 'white' : 'var(--page2)', alignItems: 'center' }}>
+              <div style={{ fontFamily: 'Georgia,serif', fontSize: 16, fontWeight: 700, color: 'var(--muted)' }}>#{p.rang}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #C0321A, #8B1A0A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'white', fontFamily: 'Georgia,serif', flexShrink: 0 }}>
+                  {(p.prenom?.[0] || '') + (p.nom?.[0] || '')}
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'Georgia,serif', fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 1 }}>{p.prenom} {p.nom}</p>
+                  <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 11, color: 'var(--muted)' }}>📍 {p.ville} · {p.debats} débats</p>
+                </div>
+              </div>
+              <div style={{ fontFamily: 'Georgia,serif', fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>{p.points} pts</div>
+            </div>
+          ))}
+        </div>
       </div>
-    </ProtectedRoute>
+    </div>
   );
 }

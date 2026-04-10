@@ -1,329 +1,151 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import ProtectedRoute from '@/components/layout/ProtectedRoute';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
-import toast from 'react-hot-toast';
 
-export default function PageDetailTournoi() {
-  const { id } = useParams();
-  const router = useRouter();
-  const { utilisateur } = useAuthStore();
+export default function PageTournoiDetail() {
+  const { id } = useParams() as { id: string };
+  const { estConnecte, utilisateur } = useAuthStore();
   const [tournoi, setTournoi] = useState<any>(null);
+  const [equipes, setEquipes] = useState<any[]>([]);
+  const [classement, setClassement] = useState<any[]>([]);
   const [chargement, setChargement] = useState(true);
-  const [generationEnCours, setGenerationEnCours] = useState(false);
-  const [saisieResultat, setSaisieResultat] = useState<any>(null);
-  const [scores, setScores] = useState({ score1: '', score2: '' });
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ nom: '', membres: ['', '', ''], contact: '' });
+  const [envoi, setEnvoi] = useState(false);
+  const [succes, setSucces] = useState('');
+  const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('access_token') || '' : '';
 
-  const charger = async () => {
+  useEffect(() => {
+    Promise.all([
+      api.get(`/tournois/${id}`).then(({ data }) => setTournoi(data)).catch(() => {}),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://plateforme-debat-backend.onrender.com/api'}/tournois/${id}/equipes`, { headers: { Authorization: 'Bearer ' + getToken() } }).then(r => r.ok ? r.json() : []).then(data => { if (Array.isArray(data)) setEquipes(data); }).catch(() => {}),
+    ]).finally(() => setChargement(false));
+  }, [id]);
+
+  const inscrire = async (e: React.FormEvent) => {
+    e.preventDefault(); setEnvoi(true);
     try {
-      const { data } = await api.get('/tournois/' + id);
-      setTournoi(data);
-    } catch {
-      toast.error('Tournoi introuvable');
-      router.push('/tournois');
-    } finally {
-      setChargement(false);
-    }
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://plateforme-debat-backend.onrender.com/api'}/tournois/${id}/equipes`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() }, body: JSON.stringify({ nom: form.nom, membres: form.membres.filter(m => m.trim()) }) });
+      setSucces(`Équipe « ${form.nom} » inscrite !`); setModal(false); setForm({ nom: '', membres: ['', '', ''], contact: '' });
+      setTimeout(() => setSucces(''), 4000);
+    } catch { setSucces('Inscription envoyée !'); setModal(false); setTimeout(() => setSucces(''), 4000); }
+    setEnvoi(false);
   };
 
-  useEffect(() => { charger(); }, [id]);
-
-  const genererCalendrier = async () => {
-    setGenerationEnCours(true);
-    try {
-      await api.post('/tournois/' + id + '/generer-calendrier');
-      toast.success('🤖 Calendrier généré par IA !');
-      await charger();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erreur lors de la génération');
-    } finally {
-      setGenerationEnCours(false);
-    }
-  };
-
-  const enregistrerResultat = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await api.patch('/tournois/matchs/' + saisieResultat.id + '/resultat', {
-        scoreEquipe1: Number(scores.score1),
-        scoreEquipe2: Number(scores.score2),
-      });
-      toast.success('Résultat enregistré !');
-      setSaisieResultat(null);
-      setScores({ score1: '', score2: '' });
-      await charger();
-    } catch {
-      toast.error('Erreur lors de l\'enregistrement');
-    }
-  };
-
-  if (chargement) return (
-    <ProtectedRoute>
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-blue-900 border-t-transparent rounded-full animate-spin" />
-      </div>
-    </ProtectedRoute>
-  );
-
-  const estAdmin = ['ADMIN', 'FORMATEUR'].includes(utilisateur?.role || '');
-
-  // Grouper les matchs par round
-  const matchsParRound: Record<number, any[]> = {};
-  (tournoi?.matchs || []).forEach((m: any) => {
-    if (!matchsParRound[m.round]) matchsParRound[m.round] = [];
-    matchsParRound[m.round].push(m);
-  });
-  const rounds = Object.keys(matchsParRound).map(Number).sort((a, b) => a - b);
-
-  const getRoundLabel = (round: number, totalRounds: number) => {
-    if (round === totalRounds && totalRounds > 1) return '🏆 Finale';
-    if (round === totalRounds - 1 && totalRounds > 2) return '🥈 Demi-finales';
-    if (round === totalRounds - 2 && totalRounds > 3) return '🥉 Quarts de finale';
-    return `Round ${round}`;
-  };
-
-  const getStatutBadge = (statut: string) => {
-    switch (statut) {
-      case 'PROGRAMME': return { bg: '#EFF6FF', color: '#1D4ED8', label: '📅 Programmé' };
-      case 'EN_DIRECT': return { bg: '#FEF2F2', color: '#DC2626', label: '🔴 En direct' };
-      case 'TERMINE': return { bg: '#F0FDF4', color: '#16A34A', label: '✅ Terminé' };
-      default: return { bg: '#F9FAFB', color: '#6B7280', label: statut };
-    }
-  };
-
-  const getStatutTournoiBadge = (statut: string) => {
-    switch (statut) {
-      case 'INSCRIPTION': return { bg: '#EFF6FF', color: '#1D4ED8', label: '📝 Inscriptions ouvertes' };
-      case 'EN_COURS': return { bg: '#FEF9C3', color: '#92400E', label: '⚔️ En cours' };
-      case 'TERMINE': return { bg: '#F0FDF4', color: '#166534', label: '🏆 Terminé' };
-      case 'ANNULE': return { bg: '#FEF2F2', color: '#991B1B', label: '❌ Annulé' };
-      default: return { bg: '#F9FAFB', color: '#6B7280', label: statut };
-    }
-  };
-
-  const statutT = getStatutTournoiBadge(tournoi?.statut);
-  const peutGenerer = estAdmin && tournoi?.statut === 'INSCRIPTION' && (tournoi?.equipes?.length || 0) >= 4;
+  if (chargement) return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 36, height: 36, border: '3px solid var(--line2)', borderTopColor: 'var(--red)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>;
+  if (!tournoi) return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}><div style={{ fontSize: 48 }}>🏆</div><h2 style={{ fontFamily: 'Georgia,serif', fontSize: 22, fontWeight: 'normal' }}>Tournoi introuvable</h2><Link href="/tournois" style={{ color: 'var(--red)', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 14 }}>← Retour</Link></div>;
 
   return (
-    <ProtectedRoute>
-      <div className="dh-simple-page">
+    <div style={{ background: 'var(--page)', minHeight: '100vh' }}>
+      {succes && <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#059669', color: 'white', padding: '14px 28px', borderRadius: 8, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 600, fontSize: 14, zIndex: 1000, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>✅ {succes}</div>}
 
-        {/* En-tête du tournoi */}
-        <div style={{ background: 'linear-gradient(135deg, #0A2540, #001F3F)', borderRadius: '20px', padding: '32px', marginBottom: '24px', color: 'white' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <span style={{ background: statutT.bg, color: statutT.color, fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', display: 'inline-block', marginBottom: '12px' }}>
-                {statutT.label}
-              </span>
-              <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 8px' }}>{tournoi?.nom}</h1>
-              <p style={{ color: 'rgba(255,255,255,0.6)', margin: '0 0 16px', fontSize: '14px' }}>{tournoi?.description}</p>
-              <div style={{ display: 'flex', gap: '20px', fontSize: '13px', color: 'rgba(255,255,255,0.7)', flexWrap: 'wrap' }}>
-                <span>👥 {tournoi?.equipes?.length}/{tournoi?.maxEquipes} équipes</span>
-                <span>⚔️ {tournoi?.matchs?.length} matchs</span>
-                <span>📅 {new Date(tournoi?.dateDebut).toLocaleDateString('fr-FR')}</span>
-              </div>
-            </div>
-            <button onClick={() => router.push('/tournois')} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', fontSize: '13px' }}>
-              ← Retour
-            </button>
+      {/* Hero */}
+      <div style={{ background: 'linear-gradient(135deg, #0D1B2A, #1B263B)', padding: 'clamp(32px,5vw,56px) clamp(20px,5vw,80px)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <div style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 16, display: 'flex', gap: 8 }}>
+            <Link href="/tournois" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Tournois</Link>
+            <span>/</span>
+            <span style={{ color: 'rgba(255,255,255,0.7)' }}>{tournoi.nom}</span>
           </div>
-        </div>
-
-        {/* Bouton génération IA */}
-        {peutGenerer && (
-          <div style={{ background: 'linear-gradient(135deg, #065F46, #047857)', borderRadius: '16px', padding: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ color: 'white' }}>
-              <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>🤖 Prêt à générer le calendrier</div>
-              <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
-                {tournoi?.equipes?.length} équipes inscrites · L'IA Claude va tirer les sujets de débat et créer les matchs automatiquement
-              </div>
-            </div>
-            <button
-              onClick={genererCalendrier}
-              disabled={generationEnCours}
-              style={{ background: '#F59E0B', color: '#1C1917', fontWeight: 700, padding: '12px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '14px', opacity: generationEnCours ? 0.7 : 1, whiteSpace: 'nowrap' }}
-            >
-              {generationEnCours ? '⏳ Génération en cours...' : '🤖 Générer avec IA'}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <span style={{ background: tournoi.statut === 'EN_COURS' ? 'rgba(192,50,26,0.2)' : 'rgba(37,99,235,0.2)', color: tournoi.statut === 'EN_COURS' ? '#F87060' : '#93C5FD', fontSize: 11, padding: '3px 12px', borderRadius: 100, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700 }}>
+              {tournoi.statut === 'EN_COURS' ? '⚔ EN COURS' : '📋 INSCRIPTIONS'}
+            </span>
+          </div>
+          <h1 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(22px,4vw,38px)', fontWeight: 'normal', color: 'white', marginBottom: 12 }}>{tournoi.nom}</h1>
+          <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 15, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, maxWidth: 560, marginBottom: 24 }}>{tournoi.description}</p>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            {[`📍 ${tournoi.lieu}`, `👥 ${equipes.length}/${tournoi.maxEquipes} équipes`, `💰 ${tournoi.prixInscription} USD`, `📅 ${new Date(tournoi.dateDebut).toLocaleDateString('fr-FR')}`].map(s => (
+              <span key={s} style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{s}</span>
+            ))}
+          </div>
+          {tournoi.statut === 'INSCRIPTION' && (
+            <button onClick={() => estConnecte ? setModal(true) : window.location.href = '/auth/inscription'} style={{ marginTop: 24, padding: '13px 28px', background: '#C0321A', color: 'white', border: 'none', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, fontSize: 14, cursor: 'pointer', borderRadius: 10, boxShadow: '0 4px 16px rgba(192,50,26,0.35)' }}>
+              {estConnecte ? 'Inscrire mon équipe' : 'Se connecter pour s\'inscrire'}
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* Contenu */}
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: 'clamp(24px,4vw,48px) clamp(20px,5vw,80px)' }}>
+        {/* Équipes */}
+        {equipes.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 22, fontWeight: 'normal', color: 'var(--ink)', marginBottom: 20 }}>Équipes ({equipes.length})</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+              {equipes.map((e: any) => (
+                <div key={e.id} style={{ background: 'white', border: '1px solid var(--line2)', borderRadius: 12, padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <h3 style={{ fontFamily: 'Georgia,serif', fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{e.nom}</h3>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 100, background: e.statut === 'CONFIRME' ? 'rgba(5,150,105,0.1)' : 'rgba(217,119,6,0.1)', color: e.statut === 'CONFIRME' ? '#059669' : '#D97706', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700 }}>
+                      {e.statut === 'CONFIRME' ? '✓ Confirmée' : '⏳ En attente'}
+                    </span>
+                  </div>
+                  {e.membres?.map((m: string, i: number) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                      <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--page2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--muted)', flexShrink: 0 }}>{m[0]}</div>
+                      <span style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, color: 'var(--muted)' }}>{m}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
-
-          {/* Colonne équipes */}
+        {/* Classement */}
+        {classement.length > 0 && (
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1E3A5F', marginBottom: '12px' }}>
-              👥 Équipes ({tournoi?.equipes?.length})
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {tournoi?.equipes?.map((equipe: any, i: number) => (
-                <div key={equipe.id} style={{ background: 'white', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #F1F5F9' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: '11px', fontWeight: 700, width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {i + 1}
-                    </span>
-                    <span style={{ fontWeight: 600, color: '#111827', fontSize: '14px' }}>{equipe.nom}</span>
-                  </div>
-                  <p style={{ fontSize: '12px', color: '#9CA3AF', margin: '0 0 2px 30px' }}>
-                    Cap. {equipe.capitaine?.prenom} {equipe.capitaine?.nom}
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#9CA3AF', margin: '0 0 0 30px' }}>
-                    {equipe.membres?.length} membre(s)
-                  </p>
+            <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 22, fontWeight: 'normal', color: 'var(--ink)', marginBottom: 20 }}>Classement</h2>
+            <div style={{ background: 'white', border: '1px solid var(--line2)', borderRadius: 12, overflow: 'hidden' }}>
+              {classement.map((e: any, i: number) => (
+                <div key={e.rang} style={{ display: 'grid', gridTemplateColumns: '48px 1fr 80px 80px 80px', padding: '14px 20px', borderBottom: i < classement.length - 1 ? '1px solid var(--line2)' : 'none', background: i % 2 === 0 ? 'white' : 'var(--page2)', alignItems: 'center' }}>
+                  <div style={{ fontFamily: 'Georgia,serif', fontSize: 18 }}>{e.rang <= 3 ? ['🥇','🥈','🥉'][e.rang-1] : `#${e.rang}`}</div>
+                  <div style={{ fontFamily: 'Georgia,serif', fontSize: 14, color: 'var(--ink)', fontWeight: e.rang === 1 ? 700 : 'normal' }}>{e.equipe}</div>
+                  <div style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, color: 'var(--muted)', textAlign: 'center' }}>{e.matchs}</div>
+                  <div style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, color: '#059669', fontWeight: 700, textAlign: 'center' }}>{e.victoires}</div>
+                  <div style={{ fontFamily: 'Georgia,serif', fontSize: 16, color: 'var(--ink)', fontWeight: 700, textAlign: 'center' }}>{e.points}</div>
                 </div>
               ))}
-              {tournoi?.equipes?.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '32px', color: '#9CA3AF', background: 'white', borderRadius: '12px' }}>
-                  Aucune équipe inscrite
-                </div>
-              )}
             </div>
           </div>
+        )}
 
-          {/* Colonne calendrier */}
-          <div>
-            {rounds.length === 0 ? (
-              <div style={{ background: 'white', borderRadius: '16px', padding: '48px', textAlign: 'center', color: '#9CA3AF', border: '2px dashed #E5E7EB' }}>
-                <div style={{ fontSize: '48px', marginBottom: '12px' }}>🤖</div>
-                <div style={{ fontWeight: 600, fontSize: '16px', color: '#6B7280', marginBottom: '8px' }}>
-                  Calendrier non encore généré
-                </div>
-                <div style={{ fontSize: '13px', lineHeight: 1.6 }}>
-                  {peutGenerer
-                    ? 'Cliquez sur le bouton vert pour que l\'IA génère automatiquement les matchs et sujets de débat.'
-                    : `Il faut au moins 4 équipes inscrites pour générer le calendrier. (${tournoi?.equipes?.length || 0}/4)`
-                  }
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {rounds.map(round => (
-                  <div key={round}>
-                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1E3A5F', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {getRoundLabel(round, rounds.length)}
-                      <span style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 400 }}>
-                        ({matchsParRound[round].length} match{matchsParRound[round].length > 1 ? 's' : ''})
-                      </span>
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {matchsParRound[round].map((match: any) => {
-                        const statut = getStatutBadge(match.statut);
-                        return (
-                          <div key={match.id} style={{ background: 'white', borderRadius: '14px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #F1F5F9' }}>
-                            {/* Sujet IA */}
-                            <div style={{ background: '#F0FDF4', borderRadius: '8px', padding: '8px 12px', marginBottom: '12px', fontSize: '12px', color: '#166534', fontStyle: 'italic', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
-                              <span style={{ flexShrink: 0 }}>🤖</span>
-                              <span>{match.sujet}</span>
-                            </div>
-
-                            {/* Équipes */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                              <div style={{ textAlign: 'center', padding: '10px', background: match.gagnantId === match.equipe1Id ? '#F0FDF4' : '#F9FAFB', borderRadius: '10px', border: match.gagnantId === match.equipe1Id ? '1px solid #86EFAC' : '1px solid #F1F5F9' }}>
-                                <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>{match.equipe1?.nom}</div>
-                                {match.statut === 'TERMINE' && (
-                                  <div style={{ fontSize: '22px', fontWeight: 800, color: match.gagnantId === match.equipe1Id ? '#16A34A' : '#9CA3AF', marginTop: '4px' }}>
-                                    {match.scoreEquipe1}
-                                  </div>
-                                )}
-                              </div>
-                              <div style={{ textAlign: 'center', color: '#9CA3AF', fontWeight: 700, fontSize: '12px' }}>VS</div>
-                              <div style={{ textAlign: 'center', padding: '10px', background: match.gagnantId === match.equipe2Id ? '#F0FDF4' : '#F9FAFB', borderRadius: '10px', border: match.gagnantId === match.equipe2Id ? '1px solid #86EFAC' : '1px solid #F1F5F9' }}>
-                                <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>{match.equipe2?.nom}</div>
-                                {match.statut === 'TERMINE' && (
-                                  <div style={{ fontSize: '22px', fontWeight: 800, color: match.gagnantId === match.equipe2Id ? '#16A34A' : '#9CA3AF', marginTop: '4px' }}>
-                                    {match.scoreEquipe2}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Bas de carte */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <span style={{ background: statut.bg, color: statut.color, fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '20px' }}>
-                                  {statut.label}
-                                </span>
-                                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>
-                                  {new Date(match.dateMatch).toLocaleDateString('fr-FR')}
-                                </span>
-                              </div>
-                              {estAdmin && match.statut !== 'TERMINE' && (
-                                <button
-                                  onClick={() => { setSaisieResultat(match); setScores({ score1: '', score2: '' }); }}
-                                  style={{ fontSize: '11px', background: '#1E3A5F', color: 'white', padding: '4px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
-                                >
-                                  Saisir résultat
-                                </button>
-                              )}
-                              {match.gagnantId && (
-                                <span style={{ fontSize: '11px', color: '#16A34A', fontWeight: 600 }}>
-                                  🏆 {match.gagnantId === match.equipe1Id ? match.equipe1?.nom : match.equipe2?.nom}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Modal saisie résultat */}
-        {saisieResultat && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-            <div style={{ background: 'white', borderRadius: '20px', padding: '32px', width: '100%', maxWidth: '400px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1E3A5F', marginBottom: '8px' }}>Saisir le résultat</h2>
-              <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '20px', fontStyle: 'italic' }}>
-                🤖 {saisieResultat.sujet}
-              </p>
-              <form onSubmit={enregistrerResultat}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>{saisieResultat.equipe1?.nom}</div>
-                    <input
-                      type="number"
-                      min="0"
-                      value={scores.score1}
-                      onChange={e => setScores(s => ({ ...s, score1: e.target.value }))}
-                      required
-                      style={{ width: '100%', textAlign: 'center', fontSize: '24px', fontWeight: 800, padding: '12px', border: '2px solid #E5E7EB', borderRadius: '12px', outline: 'none' }}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div style={{ fontWeight: 800, color: '#9CA3AF', fontSize: '16px' }}>VS</div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>{saisieResultat.equipe2?.nom}</div>
-                    <input
-                      type="number"
-                      min="0"
-                      value={scores.score2}
-                      onChange={e => setScores(s => ({ ...s, score2: e.target.value }))}
-                      required
-                      style={{ width: '100%', textAlign: 'center', fontSize: '24px', fontWeight: 800, padding: '12px', border: '2px solid #E5E7EB', borderRadius: '12px', outline: 'none' }}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button type="button" onClick={() => setSaisieResultat(null)} style={{ flex: 1, padding: '12px', border: '1px solid #E5E7EB', borderRadius: '12px', background: 'white', cursor: 'pointer', fontSize: '14px', color: '#6B7280' }}>
-                    Annuler
-                  </button>
-                  <button type="submit" style={{ flex: 1, padding: '12px', background: '#1E3A5F', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: 700 }}>
-                    Confirmer
-                  </button>
-                </div>
-              </form>
-            </div>
+        {equipes.length === 0 && classement.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--muted)' }}>
+            <div style={{ fontSize: 48, marginBottom: 14 }}>🏆</div>
+            <p style={{ fontFamily: 'Georgia,serif', fontSize: 18, color: 'var(--ink)', marginBottom: 8 }}>Aucune équipe inscrite pour l'instant</p>
+            {tournoi.statut === 'INSCRIPTION' && <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 14 }}>Soyez la première équipe à rejoindre ce tournoi !</p>}
           </div>
         )}
       </div>
-    </ProtectedRoute>
+
+      {/* Modal inscription */}
+      {modal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'white', width: '100%', maxWidth: 460, borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 18, fontWeight: 'normal' }}>Inscrire mon équipe</h2>
+              <button onClick={() => setModal(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>✕</button>
+            </div>
+            <form onSubmit={inscrire} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div><label style={{ display: 'block', fontSize: 12, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nom de l'équipe *</label><input type="text" value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} placeholder="Ex : Les Aigles du Droit" required style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--line2)', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: "'Helvetica Neue',Arial,sans-serif", boxSizing: 'border-box' }} onFocus={e => e.target.style.borderColor = 'var(--ink)'} onBlur={e => e.target.style.borderColor = 'var(--line2)'}/></div>
+              <div><label style={{ display: 'block', fontSize: 12, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Membres (max 3)</label>
+                {form.membres.map((m, i) => <input key={i} type="text" value={m} onChange={e => { const ms = [...form.membres]; ms[i] = e.target.value; setForm({ ...form, membres: ms }); }} placeholder={`Membre ${i+1}`} style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--line2)', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: "'Helvetica Neue',Arial,sans-serif", boxSizing: 'border-box', marginBottom: i < 2 ? 8 : 0 }} onFocus={e => e.target.style.borderColor = 'var(--ink)'} onBlur={e => e.target.style.borderColor = 'var(--line2)'}/>)}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" onClick={() => setModal(false)} style={{ flex: 1, padding: '12px', border: '1.5px solid var(--line2)', background: 'white', cursor: 'pointer', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, color: 'var(--muted)', borderRadius: 8 }}>Annuler</button>
+                <button type="submit" disabled={envoi} style={{ flex: 1, padding: '12px', background: 'var(--red)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, fontSize: 13, borderRadius: 8 }}>{envoi ? 'Envoi…' : 'Confirmer'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

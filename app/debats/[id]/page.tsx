@@ -1,401 +1,221 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
-import toast from 'react-hot-toast';
-import { useDebatSocket } from '@/hooks/useDebatSocket';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://plateforme-debat-backend.onrender.com/api';
-
-const MOCK_DEBATS = [
-  { id: '1', titre: 'La réforme de la Constitution haïtienne est-elle nécessaire ?', description: 'Analyse des enjeux constitutionnels et démocratiques en Haïti.', statut: 'OUVERT', categorie: 'Politique', dateDebut: new Date(Date.now() - 3600000).toISOString(), vues: 142, createur: { prenom: 'Marie', nom: 'Dupont', role: 'FORMATEUR' }, messages: [] },
-  { id: '2', titre: "L'économie informelle : frein ou moteur pour Haïti ?", description: "Débat sur le rôle du secteur informel dans l'économie haïtienne.", statut: 'OUVERT', categorie: 'Économie', dateDebut: new Date(Date.now() - 7200000).toISOString(), vues: 89, createur: { prenom: 'Jean', nom: 'Pierre', role: 'FORMATEUR' }, messages: [] },
-  { id: '3', titre: 'La place de la religion dans la politique haïtienne', description: "Quelle est l'influence des Églises sur les décisions politiques ?", statut: 'BROUILLON', categorie: 'Religion', dateDebut: new Date(Date.now() + 86400000).toISOString(), vues: 0, createur: { prenom: 'Paul', nom: 'Henri', role: 'ADMIN' }, messages: [] },
-  { id: '4', titre: 'Philosophie du droit et justice sociale en Haïti', description: 'Entre idéal philosophique et réalité judiciaire haïtienne.', statut: 'BROUILLON', categorie: 'Philosophie', dateDebut: new Date(Date.now() + 172800000).toISOString(), vues: 0, createur: { prenom: 'Anne', nom: 'Louis', role: 'FORMATEUR' }, messages: [] },
-  { id: '5', titre: "Égalité hommes-femmes dans la société haïtienne", description: 'Débat sur les inégalités de genre et les solutions possibles.', statut: 'OUVERT', categorie: 'Société', dateDebut: new Date(Date.now() - 604800000).toISOString(), vues: 312, createur: { prenom: 'Clara', nom: 'René', role: 'FORMATEUR' }, messages: [] },
-];
-
-const MODULES_PAR_CATEGORIE: Record<string, string[]> = {
-  'Politique': ['Introduction au débat politique', 'Argumentation et rhétorique', 'Analyse des systèmes constitutionnels'],
-  'Économie': ['Économie haïtienne — bases', 'Argumentation économique', 'Données et sources fiables'],
-  'Société': ['Débat sociétal et éthique', 'Argumentation inclusive', 'Communication persuasive'],
-  'Religion': ['Neutralité et débat', 'Argumentation philosophique', 'Sources et références'],
-  'Philosophie': ['Logique formelle', 'Éthique et débat', 'Pensée critique avancée'],
-  'default': ['Introduction au débat', 'Argumentation de base', 'Communication efficace'],
+const CAT_COLORS: Record<string, string> = {
+  Politique: '#7C3AED', Économie: '#D97706', Religion: '#EF4444',
+  Philosophie: '#2563EB', Société: '#059669', Culture: '#DB2777',
 };
 
-interface FeedbackIA {
-  scores: { logique: number; sources: number; persuasion: number };
-  pointsForts: string[];
-  pointsAmeliorer: string[];
-  suggestion: string;
-  moduleRecommande: string;
-}
-
-export default function PageDebat() {
-  const { id } = useParams();
-  const { utilisateur } = useAuthStore();
+export default function PageDebatDetail() {
+  const { id } = useParams() as { id: string };
+  const { estConnecte, utilisateur } = useAuthStore();
+  const router = useRouter();
   const [debat, setDebat] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
-  const [contenu, setContenu] = useState('');
-  const [chargement, setChargement] = useState(true);
+  const [nouveau, setNouveau] = useState('');
+  const [position, setPosition] = useState<'POUR' | 'CONTRE' | null>(null);
   const [envoi, setEnvoi] = useState(false);
-  const [feedbackIA, setFeedbackIA] = useState<FeedbackIA | null>(null);
-  const [analyseEnCours, setAnalyseEnCours] = useState(false);
-  const [argumentAnalyse, setArgumentAnalyse] = useState('');
-  const [onglet, setOnglet] = useState<'debat' | 'feedback'>('debat');
-
-  const peutParticiper = ['ADMIN', 'FORMATEUR', 'APPRENANT'].includes(utilisateur?.role || '');
-
-  // ── Temps réel via WebSocket ──
-  useDebatSocket({
-    debatId: id as string,
-    onNouveauMessage: (msg) => {
-      setMessages(prev => {
-        // Éviter les doublons si le message vient de nous
-        if (prev.find((m: any) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-    },
-    onVotesMisAJour: (stats) => {
-      setDebat((prev: any) => prev ? { ...prev, votes: stats } : prev);
-    },
-    onStatutDebat: (data) => {
-      setDebat((prev: any) => prev ? { ...prev, statut: data.statut } : prev);
-    },
-  });
-  const estSpectateur = utilisateur?.role === 'SPECTATEUR';
+  const [chargement, setChargement] = useState(true);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('access_token') || '' : '';
 
   useEffect(() => {
-    const charger = async () => {
-      try {
-        const { data } = await api.get('/debats/' + id);
-        setDebat(data);
-        setMessages(data.messages || []);
-      } catch {
-        try {
-          const res = await fetch(API_URL + '/debats/' + id);
-          if (res.ok) { const data = await res.json(); setDebat(data); setMessages(data.messages || []); }
-          else { const mock = MOCK_DEBATS.find(d => d.id === id); if (mock) { setDebat(mock); setMessages([]); } }
-        } catch {
-          const mock = MOCK_DEBATS.find(d => d.id === id); if (mock) { setDebat(mock); setMessages([]); }
-        }
-      } finally { setChargement(false); }
-    };
-    charger();
+    Promise.all([
+      api.get(`/debats/${id}`).then(({ data }) => setDebat(data)).catch(() => {}),
+      api.get(`/debats/${id}/messages`).catch(() => ({ data: [] })).then(r => { if (Array.isArray(r?.data)) setMessages(r.data); }),
+    ]).finally(() => setChargement(false));
   }, [id]);
 
-  const analyserAvecIA = async (argument: string) => {
-    if (!argument.trim() || analyseEnCours) return;
-    setAnalyseEnCours(true);
-    setArgumentAnalyse(argument);
-    setOnglet('feedback');
-
-    const derniersMessages = messages.slice(-3).map((m: any) => m.contenu);
-
-    try {
-      // Appel sécurisé via le backend — clé Anthropic protégée côté serveur
-      const { data } = await api.post('/ia/analyser-argument', {
-        argument,
-        titreDebat:        debat?.titre,
-        categorie:         debat?.categorie,
-        derniersArguments: derniersMessages,
-      });
-      setFeedbackIA(data);
-    } catch {
-      toast.error("Erreur lors de l'analyse IA");
-      setOnglet('debat');
-    } finally {
-      setAnalyseEnCours(false);
-    }
-  };
-
-  const voterDebat = async (type: 'POUR' | 'CONTRE') => {
-    if (!utilisateur) { toast.error('Connectez-vous pour voter'); return; }
-    try {
-      await api.post('/votes', { type, debatId: id });
-      // Recharger les stats du débat
-      const { data } = await api.get(`/votes/debat/${id}`);
-      if (data) {
-        setDebat((prev: any) => prev ? { ...prev, votes: data } : prev);
-      }
-      toast.success('Vote enregistré');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Erreur lors du vote');
-    }
-  };
+  useEffect(() => {
+    if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+  }, [messages]);
 
   const envoyerMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contenu.trim()) return;
+    if (!nouveau.trim() || !estConnecte) return;
     setEnvoi(true);
+    const optimiste = { id: Date.now().toString(), contenu: nouveau, position, auteur: { prenom: utilisateur?.prenom, nom: utilisateur?.nom }, createdAt: new Date().toISOString() };
+    setMessages(prev => [...prev, optimiste]);
+    setNouveau('');
     try {
-      const { data } = await api.post('/messages', { contenu, debatId: id });
-      setMessages(prev => [...prev, data]);
-      setContenu('');
-      toast.success('Argument envoyé !');
-    } catch {
-      const messageLocal = { id: Date.now().toString(), contenu, createdAt: new Date().toISOString(), auteur: { id: utilisateur?.id, prenom: utilisateur?.prenom, nom: utilisateur?.nom, role: utilisateur?.role } };
-      setMessages(prev => [...prev, messageLocal]);
-      setContenu('');
-      toast.success('Argument envoyé !');
-    } finally { setEnvoi(false); }
+      await api.post('/messages', { debatId: id, contenu: nouveau, position });
+    } catch {}
+    setEnvoi(false);
   };
 
-  const Jauge = ({ label, score, couleur }: { label: string; score: number; couleur: string }) => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>{label}</span>
-        <span style={{ fontSize: '13px', fontWeight: 800, color: couleur }}>{score}/10</span>
-      </div>
-      <div style={{ height: '8px', background: '#F3F4F6', borderRadius: '100px', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${score * 10}%`, background: couleur, borderRadius: '100px', transition: 'width 0.8s ease' }} />
-      </div>
-    </div>
-  );
+  const initiales = (p: string, n: string) => (p?.[0] || '') + (n?.[0] || '');
 
   if (chargement) return (
-    <div style={{ maxWidth: '780px', margin: '0 auto', padding: '48px 24px', textAlign: 'center' }}>
-      <div style={{ width: '40px', height: '40px', border: '4px solid #1e3a5f', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
-      <p style={{ color: '#9CA3AF' }}>Chargement du débat...</p>
+    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid var(--line2)', borderTopColor: 'var(--red)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (!debat) return (
-    <div style={{ maxWidth: '780px', margin: '0 auto', padding: '48px 24px', textAlign: 'center' }}>
-      <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
-      <p style={{ color: '#374151', fontWeight: 600 }}>Débat introuvable</p>
+    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+      <div style={{ fontSize: 48 }}>💬</div>
+      <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 22, fontWeight: 'normal' }}>Débat introuvable</h2>
+      <Link href="/debats" style={{ color: 'var(--red)', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 14 }}>← Retour aux débats</Link>
     </div>
   );
 
+  const catColor = CAT_COLORS[debat.categorie] || '#64748B';
+  const pour = messages.filter(m => m.position === 'POUR').length;
+  const contre = messages.filter(m => m.position === 'CONTRE').length;
+  const total = pour + contre || 1;
+
   return (
-    <div className="dh-debate-detail">
-
-      {/* En-tête débat */}
-      <div className="dh-debate-header">
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '100px', fontWeight: 700, background: debat.statut === 'OUVERT' ? '#D1FAE5' : '#F3F4F6', color: debat.statut === 'OUVERT' ? '#065F46' : '#6B7280' }}>
-            {debat.statut === 'OUVERT' ? '💬 OUVERT' : '🔒 ' + debat.statut}
-          </span>
-          {debat.categorie && <span style={{ fontSize: '12px', background: '#EFF6FF', color: '#1D4ED8', padding: '4px 10px', borderRadius: '100px', fontWeight: 600 }}>{debat.categorie}</span>}
-        </div>
-        <h1 className="dh-debate-q">{debat.titre}</h1>
-        <p style={{ color: '#6B7280', fontSize: '14px', margin: '0 0 12px 0' }}>{debat.description}</p>
-        {debat.createur && <p style={{ fontSize: '12px', color: '#9CA3AF' }}>Par <strong style={{ color: '#6B7280' }}>{debat.createur.prenom} {debat.createur.nom}</strong> · {debat.createur.role}</p>}
-        <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '12px', color: '#9CA3AF' }}>
-          <span>💬 {messages.length} argument{messages.length > 1 ? 's' : ''}</span>
-          <span>👁️ {debat.vues ?? 0} vues</span>
-          <span>📅 {new Date(debat.dateDebut).toLocaleDateString('fr-FR')}</span>
+    <div style={{ background: 'var(--page)', minHeight: '100vh' }}>
+      {/* ── Hero ── */}
+      <div style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1B263B 100%)', padding: 'clamp(32px,5vw,56px) clamp(20px,5vw,80px)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 80% 50%, rgba(27,63,139,0.15) 0%, transparent 50%)', pointerEvents: 'none' }}/>
+        <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          {/* Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+            <Link href="/debats" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Débats</Link>
+            <span>/</span>
+            <span style={{ color: 'rgba(255,255,255,0.7)' }}>{debat.categorie}</span>
+          </div>
+          {/* Badges */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+            <span style={{ background: debat.statut === 'OUVERT' ? 'rgba(5,150,105,0.2)' : 'rgba(107,114,128,0.2)', color: debat.statut === 'OUVERT' ? '#34D399' : '#9CA3AF', fontSize: 11, padding: '3px 12px', borderRadius: 100, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, border: `1px solid ${debat.statut === 'OUVERT' ? 'rgba(52,211,153,0.3)' : 'rgba(156,163,175,0.3)'}` }}>
+              {debat.statut === 'OUVERT' ? '● EN COURS' : '■ TERMINÉ'}
+            </span>
+            <span style={{ background: `${catColor}20`, color: catColor, fontSize: 11, padding: '3px 12px', borderRadius: 100, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 600, border: `1px solid ${catColor}30` }}>
+              {debat.categorie}
+            </span>
+          </div>
+          <h1 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(22px,4vw,38px)', fontWeight: 'normal', color: 'white', lineHeight: 1.25, marginBottom: 16, maxWidth: 700 }}>
+            {debat.titre}
+          </h1>
+          <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 'clamp(13px,1.5vw,16px)', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, maxWidth: 600, marginBottom: 24 }}>
+            {debat.description}
+          </p>
+          {/* Barre Pour/Contre */}
+          <div style={{ maxWidth: 500 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 12, color: '#34D399', fontWeight: 700 }}>POUR — {Math.round(pour / total * 100)}%</span>
+              <span style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 12, color: '#F87171', fontWeight: 700 }}>CONTRE — {Math.round(contre / total * 100)}%</span>
+            </div>
+            <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 100, overflow: 'hidden', display: 'flex' }}>
+              <div style={{ height: '100%', width: `${pour / total * 100}%`, background: '#34D399', transition: 'width 0.5s' }}/>
+              <div style={{ height: '100%', flex: 1, background: '#F87171' }}/>
+            </div>
+            <div style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+              {messages.length} argument{messages.length > 1 ? 's' : ''} · {debat.vues ?? 0} vues
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Onglets */}
-      <div style={{ display:'flex', gap:'0', borderBottom:'1px solid var(--line2)', marginBottom:'24px' }}>
-        {[['debat', 'Débat'], ['feedback', 'Feedback IA']].map(([val, label]) => (
-          <button key={val} onClick={() => setOnglet(val as any)} className="dh-filter-tab" style={{ fontSize:'10px' , ...(onglet===val ? { color:'var(--ink)', borderBottomColor:'var(--ink)' } : {}) }}>
-            {label}
-          </button>
-        ))}
-        {analyseEnCours && <span style={{ fontFamily:"'Helvetica Neue',Arial,sans-serif", fontSize:'11px', color:'var(--muted)', display:'flex', alignItems:'center', padding:'0 16px' }}>Analyse en cours...</span>}
-      </div>
-
-      {/* ONGLET DÉBAT */}
-      {onglet === 'debat' && (
-        <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>
-
-          <div style={{ padding: '12px 20px', borderBottom: '1px solid #F3F4F6', background: '#F9FAFB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>💬 {messages.length} argument{messages.length > 1 ? 's' : ''}</span>
-            {debat.statut === 'OUVERT' && <span style={{ fontSize: '12px', color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />En cours</span>}
-          </div>
-
-          <div style={{ padding: '16px', minHeight: '320px', maxHeight: '480px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {messages.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '48px 0' }}>
-                <div style={{ fontSize: '48px', marginBottom: '12px' }}>💭</div>
-                <p style={{ fontWeight: 600, color: '#374151', marginBottom: '8px' }}>Aucun argument pour le moment</p>
-                <p style={{ fontSize: '14px', color: '#9CA3AF' }}>Soyez le premier à partager votre point de vue !</p>
-              </div>
-            ) : messages.map((msg: any) => {
-              const estMoi = msg.auteur?.id === utilisateur?.id;
-              return (
-                <div key={msg.id} style={{ display: 'flex', gap: '12px', flexDirection: estMoi ? 'row-reverse' : 'row' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: estMoi ? '#059669' : '#1e3a5f', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
-                    {(msg.auteur?.prenom?.[0] || '?').toUpperCase()}
-                  </div>
-                  <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', alignItems: estMoi ? 'flex-end' : 'flex-start' }}>
-                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px', fontWeight: 600 }}>
-                      {estMoi ? 'Vous' : `${msg.auteur?.prenom} ${msg.auteur?.nom}`}
-                    </div>
-                    <div style={{ padding: '12px 16px', borderRadius: '16px', fontSize: '14px', lineHeight: 1.6, background: estMoi ? '#059669' : '#F3F4F6', color: estMoi ? 'white' : '#1F2937', borderBottomRightRadius: estMoi ? '4px' : '16px', borderBottomLeftRadius: estMoi ? '16px' : '4px' }}>
-                      {msg.contenu}
-                    </div>
-                    {/* Bouton analyser cet argument */}
-                    {peutParticiper && (
-                      <button
-                        onClick={() => analyserAvecIA(msg.contenu)}
-                        style={{ marginTop: '6px', fontSize: '11px', color: '#7B61FF', background: 'rgba(123,97,255,0.08)', border: '1px solid rgba(123,97,255,0.2)', borderRadius: '8px', padding: '3px 10px', cursor: 'pointer', fontWeight: 600 }}
-                      >
-                        🤖 Analyser cet argument
-                      </button>
-                    )}
-                    <span style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
-                      {new Date(msg.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Zone saisie */}
-          {debat.statut === 'OUVERT' && peutParticiper && (
-            <div style={{ borderTop: '1px solid #F3F4F6', padding: '16px', background: '#F9FAFB' }}>
-              <form onSubmit={envoyerMessage}>
-                <textarea
-                  value={contenu}
-                  onChange={e => setContenu(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerMessage(e as any); } }}
-                  placeholder="Partagez votre argument... (Entrée pour envoyer)"
-                  style={{ width: '100%', border: '1.5px solid #E5E7EB', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', outline: 'none', resize: 'none', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: '10px' }}
-                  rows={3}
-                  maxLength={1000}
-                />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', color: '#9CA3AF' }}>{contenu.length}/1000</span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {contenu.trim() && (
-                      <button type="button" onClick={() => analyserAvecIA(contenu)} style={{ background: 'rgba(123,97,255,0.1)', border: '1px solid rgba(123,97,255,0.3)', color: '#7B61FF', padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                        🤖 Analyser avant d'envoyer
-                      </button>
-                    )}
-                    <button type="submit" disabled={envoi || !contenu.trim()} style={{ background: '#059669', color: 'white', padding: '8px 20px', borderRadius: '10px', border: 'none', fontWeight: 700, fontSize: '14px', cursor: 'pointer', opacity: envoi || !contenu.trim() ? 0.5 : 1 }}>
-                      {envoi ? '...' : 'Envoyer'}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {debat.statut !== 'OUVERT' && (
-            <div style={{ borderTop: '1px solid #F3F4F6', padding: '16px', textAlign: 'center', background: '#F9FAFB' }}>
-              <p style={{ color: '#6B7280', fontSize: '14px' }}>🔒 Ce débat est fermé.</p>
-            </div>
-          )}
-          {debat.statut === 'OUVERT' && estSpectateur && (
-            <div style={{ borderTop: '1px solid #F3F4F6', padding: '16px', textAlign: 'center', background: '#F9FAFB' }}>
-              <p style={{ color: '#6B7280', fontSize: '14px' }}>👁️ Mode spectateur — lecture seule.</p>
-            </div>
-          )}
-          {debat.statut === 'OUVERT' && !utilisateur && (
-            <div style={{ borderTop: '1px solid #F3F4F6', padding: '16px', textAlign: 'center', background: '#EFF6FF' }}>
-              <p style={{ color: '#1D4ED8', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Connectez-vous pour participer</p>
-              <a href="/auth/connexion" style={{ background: '#1e3a5f', color: 'white', padding: '8px 20px', borderRadius: '10px', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>Se connecter</a>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ONGLET FEEDBACK IA */}
-      {onglet === 'feedback' && (
+      {/* ── Corps ── */}
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: 'clamp(24px,4vw,40px) clamp(20px,5vw,80px)', display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28 }}>
+        {/* Messages */}
         <div>
-          {analyseEnCours ? (
-            <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #E5E7EB', padding: '48px', textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤖</div>
-              <p style={{ fontWeight: 700, color: '#374151', marginBottom: '8px' }}>Analyse en cours...</p>
-              <p style={{ fontSize: '14px', color: '#9CA3AF' }}>L'IA analyse votre argument dans le contexte du débat</p>
-            </div>
-          ) : feedbackIA ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-              {/* Argument analysé */}
-              <div style={{ background: '#F9FAFB', borderRadius: '16px', border: '1px solid #E5E7EB', padding: '16px 20px' }}>
-                <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Argument analysé</p>
-                <p style={{ fontSize: '14px', color: '#374151', fontStyle: 'italic', margin: 0 }}>"{argumentAnalyse}"</p>
+          <h2 style={{ fontFamily: 'Georgia,serif', fontSize: 20, fontWeight: 'normal', color: 'var(--ink)', marginBottom: 20 }}>
+            Arguments ({messages.length})
+          </h2>
+          <div ref={messagesRef} style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 500, overflowY: 'auto', paddingRight: 8 }}>
+            {messages.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)' }}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>💬</div>
+                <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 14 }}>Soyez le premier à argumenter</p>
               </div>
-
-              {/* Scores — 3 jauges */}
-              <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #E5E7EB', padding: '24px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#111827', marginBottom: '20px' }}>📊 Scores de l'argument</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <Jauge label="🧠 Logique" score={feedbackIA.scores.logique} couleur="#10B981" />
-                  <Jauge label="📚 Sources & Preuves" score={feedbackIA.scores.sources} couleur="#3B82F6" />
-                  <Jauge label="🎯 Persuasion" score={feedbackIA.scores.persuasion} couleur="#F59E0B" />
+            ) : messages.map(msg => (
+              <div key={msg.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: msg.position === 'POUR' ? 'rgba(5,150,105,0.15)' : msg.position === 'CONTRE' ? 'rgba(239,68,68,0.15)' : 'var(--page2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: msg.position === 'POUR' ? '#059669' : msg.position === 'CONTRE' ? '#EF4444' : 'var(--muted)', fontFamily: 'Georgia,serif', flexShrink: 0 }}>
+                  {initiales(msg.auteur?.prenom, msg.auteur?.nom).toUpperCase() || '?'}
                 </div>
-                <div style={{ marginTop: '20px', padding: '12px 16px', background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.08))', borderRadius: '12px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '13px', color: '#6B7280' }}>Score moyen : </span>
-                  <span style={{ fontSize: '20px', fontWeight: 900, color: '#1e3a5f' }}>
-                    {((feedbackIA.scores.logique + feedbackIA.scores.sources + feedbackIA.scores.persuasion) / 3).toFixed(1)}/10
-                  </span>
-                </div>
-              </div>
-
-              {/* Points forts et à améliorer */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ background: '#F0FDF4', borderRadius: '16px', border: '1px solid #BBF7D0', padding: '20px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#065F46', marginBottom: '12px' }}>✅ Points forts</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {feedbackIA.pointsForts.map((p, i) => (
-                      <li key={i} style={{ fontSize: '13px', color: '#047857', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                        <span style={{ flexShrink: 0 }}>•</span>{p}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div style={{ background: '#FFF7ED', borderRadius: '16px', border: '1px solid #FED7AA', padding: '20px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#9A3412', marginBottom: '12px' }}>💡 À améliorer</h4>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {feedbackIA.pointsAmeliorer.map((p, i) => (
-                      <li key={i} style={{ fontSize: '13px', color: '#C2410C', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                        <span style={{ flexShrink: 0 }}>•</span>{p}
-                      </li>
-                    ))}
-                  </ul>
+                <div style={{ flex: 1, background: 'white', border: '1px solid var(--line2)', borderRadius: 12, padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{msg.auteur?.prenom} {msg.auteur?.nom}</span>
+                    {msg.position && (
+                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 100, background: msg.position === 'POUR' ? 'rgba(5,150,105,0.1)' : 'rgba(239,68,68,0.1)', color: msg.position === 'POUR' ? '#059669' : '#EF4444', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700 }}>
+                        {msg.position}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 14, color: 'var(--ink)', lineHeight: 1.6 }}>{msg.contenu}</p>
+                  <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+                    {new Date(msg.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </p>
                 </div>
               </div>
+            ))}
+          </div>
 
-              {/* Suggestion IA — encadré jaune */}
-              <div style={{ background: '#FFFBEB', borderRadius: '16px', border: '2px solid #FCD34D', padding: '20px' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#92400E', marginBottom: '8px' }}>💡 Suggestion de l'IA</h4>
-                <p style={{ fontSize: '14px', color: '#78350F', lineHeight: 1.6, margin: 0 }}>{feedbackIA.suggestion}</p>
+          {/* Formulaire */}
+          {estConnecte && debat.statut === 'OUVERT' ? (
+            <form onSubmit={envoyerMessage} style={{ marginTop: 20 }}>
+              {/* Position */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                {(['POUR', 'CONTRE'] as const).map(p => (
+                  <button key={p} type="button" onClick={() => setPosition(prev => prev === p ? null : p)} style={{ padding: '8px 20px', borderRadius: 100, border: `1.5px solid ${position === p ? (p === 'POUR' ? '#059669' : '#EF4444') : 'var(--line2)'}`, background: position === p ? (p === 'POUR' ? 'rgba(5,150,105,0.1)' : 'rgba(239,68,68,0.1)') : 'white', color: position === p ? (p === 'POUR' ? '#059669' : '#EF4444') : 'var(--muted)', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                    {p === 'POUR' ? '👍 Pour' : '👎 Contre'}
+                  </button>
+                ))}
+                <span style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 12, color: 'var(--muted)', alignSelf: 'center', marginLeft: 4 }}>— ou neutre</span>
               </div>
-
-              {/* Module recommandé — encadré bleu */}
-              <div style={{ background: '#EFF6FF', borderRadius: '16px', border: '2px solid #BFDBFE', padding: '20px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div style={{ fontSize: '32px', flexShrink: 0 }}>📚</div>
-                <div>
-                  <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#1D4ED8', marginBottom: '4px' }}>Module recommandé</h4>
-                  <p style={{ fontSize: '15px', fontWeight: 700, color: '#1e3a5f', margin: '0 0 8px 0' }}>{feedbackIA.moduleRecommande}</p>
-                  <a href="/formations" style={{ fontSize: '13px', color: '#3B82F6', fontWeight: 600, textDecoration: 'none' }}>Accéder à la formation →</a>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button onClick={() => { setFeedbackIA(null); setOnglet('debat'); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #E5E7EB', background: 'white', fontWeight: 600, fontSize: '14px', cursor: 'pointer', color: '#374151' }}>
-                  ← Retour au débat
-                </button>
-                <button onClick={() => { setFeedbackIA(null); setArgumentAnalyse(''); }} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #7B61FF, #00D4FF)', color: 'white', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
-                  🤖 Nouvelle analyse
+              <div style={{ display: 'flex', gap: 10 }}>
+                <textarea value={nouveau} onChange={e => setNouveau(e.target.value)} placeholder="Partagez votre argument…" rows={3} style={{ flex: 1, padding: '12px 14px', border: '1.5px solid var(--line2)', borderRadius: 12, fontSize: 14, outline: 'none', resize: 'none', fontFamily: "'Helvetica Neue',Arial,sans-serif", color: 'var(--ink)', transition: 'border-color 0.2s' }}
+                  onFocus={e => e.target.style.borderColor = 'var(--ink)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--line2)'}/>
+                <button type="submit" disabled={envoi || !nouveau.trim()} style={{ padding: '12px 20px', background: 'var(--ink)', color: 'var(--page)', border: 'none', borderRadius: 12, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, fontSize: 13, cursor: envoi || !nouveau.trim() ? 'not-allowed' : 'pointer', opacity: !nouveau.trim() ? 0.5 : 1, alignSelf: 'flex-end' }}>
+                  Envoyer
                 </button>
               </div>
+            </form>
+          ) : !estConnecte ? (
+            <div style={{ marginTop: 20, background: 'var(--page2)', border: '1px solid var(--line2)', borderRadius: 12, padding: '20px', textAlign: 'center' }}>
+              <p style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 14, color: 'var(--muted)', marginBottom: 14 }}>Connectez-vous pour participer au débat</p>
+              <Link href="/auth/connexion" style={{ display: 'inline-block', padding: '10px 24px', background: 'var(--red)', color: 'white', textDecoration: 'none', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, fontSize: 13, borderRadius: 8 }}>Se connecter</Link>
             </div>
-          ) : (
-            <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #E5E7EB', padding: '48px', textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤖</div>
-              <h3 style={{ fontWeight: 800, color: '#374151', marginBottom: '8px' }}>Feedback IA</h3>
-              <p style={{ fontSize: '14px', color: '#9CA3AF', marginBottom: '24px', maxWidth: '360px', margin: '0 auto 24px' }}>
-                Cliquez sur "Analyser cet argument" sous n'importe quel message, ou écrivez votre argument et cliquez "Analyser avant d'envoyer".
-              </p>
-              <button onClick={() => setOnglet('debat')} style={{ background: '#1e3a5f', color: 'white', padding: '12px 24px', borderRadius: '12px', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
-                ← Aller au débat
-              </button>
-            </div>
-          )}
+          ) : null}
         </div>
-      )}
+
+        {/* Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Infos débat */}
+          <div style={{ background: 'white', border: '1px solid var(--line2)', borderRadius: 14, padding: '20px' }}>
+            <h3 style={{ fontFamily: 'Georgia,serif', fontSize: 15, fontWeight: 'normal', color: 'var(--ink)', marginBottom: 16 }}>Informations</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { label: 'Statut', value: debat.statut === 'OUVERT' ? '🟢 Ouvert' : '⚫ Fermé' },
+                { label: 'Catégorie', value: debat.categorie },
+                { label: 'Date début', value: new Date(debat.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) },
+                { label: 'Arguments', value: `${messages.length}` },
+                { label: 'Vues', value: `${debat.vues ?? 0}` },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+                  <span style={{ fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* CTA */}
+          <div style={{ background: 'var(--ink)', borderRadius: 14, padding: '20px', textAlign: 'center' }}>
+            <p style={{ fontFamily: 'Georgia,serif', fontSize: 14, color: 'white', marginBottom: 14, lineHeight: 1.5 }}>Rejoignez la communauté et participez aux grands débats haïtiens</p>
+            {estConnecte ? (
+              <Link href="/debats" style={{ display: 'block', padding: '10px', background: 'var(--red)', color: 'white', textDecoration: 'none', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, fontSize: 12, borderRadius: 8 }}>← Tous les débats</Link>
+            ) : (
+              <Link href="/auth/inscription" style={{ display: 'block', padding: '10px', background: 'var(--red)', color: 'white', textDecoration: 'none', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 700, fontSize: 12, borderRadius: 8 }}>S'inscrire gratuitement</Link>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          div[style*="grid-template-columns: 1fr 340px"] { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }
