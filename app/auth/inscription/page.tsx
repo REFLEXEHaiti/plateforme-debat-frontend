@@ -150,7 +150,7 @@ export default function PageInscription() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', background: 'linear-gradient(135deg, #0A2540 0%, #001F3F 50%, #0A0F1E 100%)' }}>
+    <div style={{ minHeight: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', background: 'linear-gradient(135deg, #0D1B2A 0%, #1B263B 60%, #0A0F1E 100%)' }}>
 
       <div style={{ position: 'absolute', right: '5%', top: '50%', transform: 'translateY(-50%)', opacity: 0.08, pointerEvents: 'none', fontSize: '400px', lineHeight: 1 }}>🌍</div>
 
@@ -173,7 +173,7 @@ export default function PageInscription() {
                   key={r}
                   type="button"
                   onClick={() => handleChange('role', r)}
-                  style={{ flex: 1, padding: '10px 8px', borderRadius: '10px', border: `2px solid ${form.role === r ? '#00D4FF' : 'rgba(0,0,0,0.1)'}`, background: form.role === r ? 'rgba(0,212,255,0.08)' : 'white', color: form.role === r ? '#0A2540' : 'rgba(0,0,0,0.5)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '10px 8px', borderRadius: '10px', border: `2px solid ${form.role === r ? '#C0321A' : 'rgba(0,0,0,0.1)'}`, background: form.role === r ? 'rgba(192,50,26,0.06)' : 'white', color: form.role === r ? '#0A2540' : 'rgba(0,0,0,0.5)', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}
                 >
                   {r === 'APPRENANT' ? '🎓' : r === 'SPECTATEUR' ? '👁️' : '👨‍🏫'} {r.charAt(0) + r.slice(1).toLowerCase()}
                 </button>
@@ -221,14 +221,14 @@ export default function PageInscription() {
           <button
             type="submit"
             disabled={chargement}
-            style={{ background: 'linear-gradient(135deg, #00D4FF, #7B61FF)', color: 'white', padding: '14px', borderRadius: '12px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer', opacity: chargement ? 0.7 : 1 }}
+            style={{ background: chargement ? 'rgba(192,50,26,0.5)' : 'linear-gradient(135deg, #C0321A, #A02818)', color: 'white', padding: '14px', borderRadius: '12px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: chargement ? 'not-allowed' : 'pointer', boxShadow: '0 4px 16px rgba(192,50,26,0.3)' }}
           >
             {chargement ? 'Création...' : 'Créer mon compte 🚀'}
           </button>
 
           <div style={{ textAlign: 'center', borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '16px' }}>
             <span style={{ fontSize: '14px', color: 'rgba(0,0,0,0.5)' }}>Déjà un compte ? </span>
-            <Link href="/auth/connexion" style={{ color: '#00D4FF', fontWeight: 700, textDecoration: 'none', fontSize: '14px' }}>Se connecter</Link>
+            <Link href="/auth/connexion" style={{ color: '#C0321A', fontWeight: 700, textDecoration: 'none', fontSize: '14px' }}>Se connecter</Link>
           </div>
         </form>
       </div>

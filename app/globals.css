@@ -531,3 +531,242 @@ p { margin: 0; }
   .dh-ia-scores { grid-template-columns:1fr 1fr; }
   .dh-tourn-hero { padding:40px 20px; }
 }
+
+/* ══════════════ PREMIUM PAGE RESPONSIVE ══════════════ */
+.dh-premium-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .dh-premium-grid {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
+/* ══════════════ AUTH PAGES ══════════════ */
+.dh-auth-card {
+  background: white;
+  border-radius: 24px;
+  padding: clamp(28px, 5vw, 44px);
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 480px) {
+  .dh-auth-card { border-radius: 16px; padding: 24px; }
+  .dh-two-col-form { grid-template-columns: 1fr !important; }
+}
+
+/* ══════════════ PAGE HEADERS ══════════════ */
+.dh-page-hero {
+  background: linear-gradient(135deg, #0D1B2A 0%, #1B263B 100%);
+  padding: clamp(40px, 6vw, 80px) clamp(20px, 4vw, 40px);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.dh-page-hero h1 {
+  font-family: Georgia, serif;
+  font-size: clamp(28px, 5vw, 52px);
+  color: white;
+  font-weight: normal;
+  margin-bottom: 12px;
+}
+.dh-page-hero p {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: clamp(14px, 2vw, 18px);
+  color: rgba(255,255,255,0.55);
+}
+
+/* ══════════════ CARDS GRID ══════════════ */
+.dh-cards-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.dh-cards-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .dh-cards-grid-3 { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}
+@media (max-width: 600px) {
+  .dh-cards-grid-3 { grid-template-columns: 1fr; gap: 14px; }
+  .dh-cards-grid-2 { grid-template-columns: 1fr; gap: 14px; }
+}
+
+/* ══════════════ FORMATIONS PAGE ══════════════ */
+.dh-formations-page { padding: clamp(24px,4vw,48px) clamp(20px,4vw,48px); max-width: 1200px; margin: 0 auto; }
+@media (max-width: 600px) {
+  .dh-formations-page { padding: 20px 16px; }
+}
+
+/* ══════════════ TOURNOIS PAGE ══════════════ */
+.dh-tournoi-card {
+  background: var(--page2);
+  border: 1px solid var(--line2);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.dh-tournoi-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+
+/* ══════════════ DEBATS PAGE ══════════════ */
+.dh-debates-page { padding: clamp(24px,4vw,48px) clamp(20px,4vw,48px); max-width: 1200px; margin: 0 auto; }
+
+/* ══════════════ GLOBAL CONTAINERS ══════════════ */
+.dh-container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px,4vw,48px); }
+.dh-section { padding: clamp(40px,6vw,80px) clamp(16px,4vw,48px); }
+
+/* ══════════════ FILTER PILLS ══════════════ */
+.dh-filter-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin-bottom: 32px;
+}
+.dh-filter-bar::-webkit-scrollbar { display: none; }
+.dh-filter-pill {
+  white-space: nowrap;
+  padding: 8px 18px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 500;
+  border: 1.5px solid var(--line2);
+  background: var(--page);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.dh-filter-pill:hover { border-color: var(--ink); color: var(--ink); }
+.dh-filter-pill.active {
+  background: var(--ink);
+  color: var(--page);
+  border-color: var(--ink);
+}
+
+/* ══════════════ LIVES PAGE ══════════════ */
+.dh-lives-page { padding: clamp(24px,4vw,48px) clamp(20px,4vw,48px); max-width: 1200px; margin: 0 auto; }
+@media (max-width: 600px) {
+  .dh-lives-page { padding: 20px 16px; }
+}
+
+/* ══════════════ PROFIL PAGE ══════════════ */
+.dh-profil-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+@media (max-width: 480px) {
+  .dh-profil-actions { flex-direction: column; align-items: stretch; }
+  .dh-profil-actions a, .dh-profil-actions button { text-align: center; }
+}
+
+/* ══════════════ MODAL ══════════════ */
+.dh-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.dh-modal-box {
+  background: var(--page);
+  border: 1px solid var(--line2);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.3);
+}
+
+/* ══════════════ STATUS BADGES ══════════════ */
+.dh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 100px;
+  text-transform: uppercase;
+}
+.dh-badge-open   { background: rgba(26,107,58,0.1);  color: var(--green); border: 1px solid rgba(26,107,58,0.2); }
+.dh-badge-live   { background: rgba(192,50,26,0.1);  color: var(--red);   border: 1px solid rgba(192,50,26,0.2); }
+.dh-badge-soon   { background: rgba(27,63,139,0.1);  color: var(--blue);  border: 1px solid rgba(27,63,139,0.2); }
+.dh-badge-closed { background: var(--page3); color: var(--muted); border: 1px solid var(--line2); }
+
+/* ══════════════ PAIEMENT / PREMIUM ══════════════ */
+.dh-pricing-card {
+  border-radius: 20px;
+  padding: 32px;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.dh-pricing-card:hover { transform: translateY(-4px); }
+.dh-pricing-card.featured {
+  transform: scale(1.03);
+  box-shadow: 0 0 48px rgba(0,212,255,0.15);
+}
+@media (max-width: 600px) {
+  .dh-pricing-card.featured { transform: none; }
+}
+
+/* ══════════════ INSCRIPTION STEPS ══════════════ */
+.dh-step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.dh-step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transition: background 0.2s;
+}
+.dh-step-dot.active { background: white; }
+
+/* ══════════════ SMOOTH ANIMATIONS ══════════════ */
+@keyframes dh-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dh-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.dh-animate-up  { animation: dh-fade-up  0.4s ease forwards; }
+.dh-animate-in  { animation: dh-fade-in  0.3s ease forwards; }
+
+/* ══════════════ SCROLLBAR DESIGN ══════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--page2); }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ══════════════ SELECTION ══════════════ */
+::selection { background: rgba(192,50,26,0.18); }

@@ -31,13 +31,15 @@ export function useAuth() {
       router.push('/dashboard');
     } catch (error: any) {
       const message = error.response?.data?.message || 'Erreur lors de l\'inscription';
-      toast.error(Array.isArray(message) ? message[0] : message);
+      const msg = Array.isArray(message) ? message[0] : message;
+      toast.error(msg);
+      throw new Error(msg); // Re-throw pour que la page puisse réagir
     } finally {
       setChargement(false);
     }
   };
 
-  // Connexion
+  // Connexion — re-throw pour que la page puisse afficher son propre message d'erreur
   const seConnecter = async (email: string, motDePasse: string) => {
     setChargement(true);
     try {
@@ -46,7 +48,8 @@ export function useAuth() {
       toast.success(`Bienvenue ${data.utilisateur.prenom} !`);
       router.push('/dashboard');
     } catch (error: any) {
-      toast.error('Email ou mot de passe incorrect');
+      // Ne pas afficher toast ici — la page gère son propre message d'erreur inline
+      throw error;
     } finally {
       setChargement(false);
     }
