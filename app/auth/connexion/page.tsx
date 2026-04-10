@@ -4,29 +4,29 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 
-function RubinMark({ size = 28 }: { size?: number }) {
+function RubinMark({ size = 32 }: { size?: number }) {
   const h = Math.round(size * 1.18);
   return (
-    <svg width={size} height={h} viewBox="0 0 22 26" fill="none" aria-hidden="true">
-      <path d="M11 1.2C9 3.2,6.5 5.2,4.8 7.2C3.2 9.2,2.8 11.2,3.8 13.2C4.8 15.2,6.8 17,7.5 19.8C8.2 22.4,9.2 24.2,11 24.2C12.8 24.2,13.8 22.4,14.5 19.8C15.2 17,17.2 15.2,18.2 13.2C19.2 11.2,18.8 9.2,17.2 7.2C15.5 5.2,13 3.2,11 1.2Z" fill="currentColor" />
+    <svg width={size} height={h} viewBox="0 0 22 26" fill="none">
+      <path d="M11 1.2C9 3.2,6.5 5.2,4.8 7.2C3.2 9.2,2.8 11.2,3.8 13.2C4.8 15.2,6.8 17,7.5 19.8C8.2 22.4,9.2 24.2,11 24.2C12.8 24.2,13.8 22.4,14.5 19.8C15.2 17,17.2 15.2,18.2 13.2C19.2 11.2,18.8 9.2,17.2 7.2C15.5 5.2,13 3.2,11 1.2Z" fill="currentColor"/>
     </svg>
   );
 }
 
-const inp = {
-  width: '100%', padding: '12px 14px',
-  border: '1.5px solid rgba(0,0,0,0.12)',
-  borderRadius: 10, fontSize: 14, outline: 'none',
-  boxSizing: 'border-box' as const, fontFamily: "'Helvetica Neue',Arial,sans-serif",
-  color: '#111', background: 'white', transition: 'border-color 0.2s',
-};
+const PARTENAIRES = [
+  { nom: 'AyiboPost', couleur: 'white', bg: 'transparent', bold: ['Ayibo', 'Post'] },
+  { nom: 'YWCA Haïti', couleur: 'white', bg: 'transparent', icon: '📍' },
+  { nom: 'DECATHLON', couleur: 'white', bg: '#006FBA', bold: true },
+  { nom: 'eiffortic Haïti', couleur: 'white', bg: 'transparent', italic: true },
+  { nom: 'Sun Auto', couleur: 'white', bg: 'transparent', icon: '🌟' },
+];
 
 export default function PageConnexion() {
   const { seConnecter, chargement } = useAuth();
-  const [erreur, setErreur] = useState('');
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [voirMDP, setVoirMDP] = useState(false);
+  const [erreur, setErreur] = useState('');
 
   const soumettre = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,113 +39,173 @@ export default function PageConnexion() {
     }
   };
 
+  const inpStyle: React.CSSProperties = {
+    width: '100%', padding: '18px 18px 18px 52px',
+    background: 'rgba(255,255,255,0.08)',
+    border: '1.5px solid rgba(255,255,255,0.15)',
+    borderRadius: 12, fontSize: 16, outline: 'none',
+    color: 'white', fontFamily: "'Helvetica Neue',Arial,sans-serif",
+    boxSizing: 'border-box', transition: 'border-color 0.2s, background 0.2s',
+  };
+
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex',
-      background: 'linear-gradient(135deg, #0D1B2A 0%, #1B263B 60%, #0A0F1E 100%)',
+      minHeight: '100vh',
+      background: 'linear-gradient(160deg, #071220 0%, #0D1B2A 30%, #142236 60%, #0A1525 100%)',
       position: 'relative', overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
     }}>
-      {/* Décor gauche */}
+      {/* Photo de fond — personnes en débat */}
       <div style={{
-        position: 'absolute', left: 0, top: 0, bottom: 0, width: '45%',
-        backgroundImage: 'radial-gradient(circle at 30% 40%, rgba(192,50,26,0.08) 0%, transparent 60%), radial-gradient(circle at 70% 80%, rgba(27,63,139,0.1) 0%, transparent 50%)',
-        pointerEvents: 'none',
-      }} />
+        position: 'absolute', inset: 0,
+        backgroundImage: 'url(https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1400&q=70)',
+        backgroundSize: 'cover', backgroundPosition: 'center 30%',
+        opacity: 0.35,
+      }}/>
+      {/* Gradient overlay */}
       <div style={{
-        position: 'absolute', right: '5%', top: '50%', transform: 'translateY(-50%)',
-        opacity: 0.04, fontSize: '40vw', lineHeight: 1, pointerEvents: 'none',
-        userSelect: 'none', fontFamily: 'Georgia,serif', color: 'white',
-        maxWidth: '60%',
-      }}>«»</div>
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(to bottom, rgba(7,18,32,0.7) 0%, rgba(10,21,37,0.6) 50%, rgba(7,18,32,0.9) 100%)',
+      }}/>
 
       {/* Contenu centré */}
       <div style={{
-        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 'clamp(32px,5vw,60px) clamp(16px,4vw,32px)', zIndex: 1,
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: 'clamp(40px,6vw,80px) clamp(16px,4vw,32px) 0',
+        position: 'relative', zIndex: 1,
       }}>
-        <div className="dh-auth-card" style={{ maxWidth: 420 }}>
-          {/* Logo */}
-          <div style={{ textAlign: 'center', marginBottom: 28 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#C0321A' }}>
-              <RubinMark size={28} />
-            </div>
-            <h1 style={{ fontFamily: 'Georgia,serif', fontSize: 'clamp(22px,4vw,28px)', fontWeight: 'normal', color: '#111', margin: 0 }}>
-              Se connecter
-            </h1>
-            <p style={{ color: 'rgba(0,0,0,0.4)', fontSize: 13, marginTop: 6, fontFamily: "'Helvetica Neue',Arial,sans-serif" }}>
-              Bienvenue sur Débat Haïti
-            </p>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16, color: 'white' }}>
+            <RubinMark size={28}/>
+            <span style={{ fontFamily: 'Georgia,serif', fontSize: 24, fontWeight: 'normal' }}>
+              Débat sur <strong>Haïti</strong>
+            </span>
+          </div>
+          <div style={{ width: 48, height: 1, background: 'rgba(255,255,255,0.2)', margin: '0 auto 20px' }}/>
+          <p style={{
+            fontFamily: 'Georgia,serif', fontStyle: 'italic',
+            fontSize: 'clamp(14px,2vw,18px)', color: 'rgba(255,255,255,0.75)',
+            letterSpacing: '0.01em',
+          }}>
+            Bienvenue à nouveau dans la communauté.
+          </p>
+        </div>
+
+        {/* Formulaire */}
+        <form onSubmit={soumettre} style={{ width: '100%', maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Email */}
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontSize: 18, opacity: 0.6 }}>✉️</span>
+            <input
+              type="email" value={email}
+              onChange={e => { setEmail(e.target.value); setErreur(''); }}
+              placeholder="E-mail" required style={inpStyle}
+              onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.5)'; e.target.style.background = 'rgba(255,255,255,0.12)'; }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)'; }}
+            />
           </div>
 
-          <form onSubmit={soumettre} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, color: 'rgba(0,0,0,0.5)', marginBottom: 6, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email *</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="jean@email.com" required style={inp}
-                onFocus={e => { e.target.style.borderColor = '#C0321A'; e.target.style.boxShadow = '0 0 0 3px rgba(192,50,26,0.1)'; }}
-                onBlur={e => { e.target.style.borderColor = 'rgba(0,0,0,0.12)'; e.target.style.boxShadow = 'none'; }} />
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <label style={{ fontSize: 12, color: 'rgba(0,0,0,0.5)', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mot de passe *</label>
-                <Link href="/auth/mot-de-passe-oublie" style={{ fontSize: 12, color: '#C0321A', textDecoration: 'none', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 600 }}>
-                  Oublié ?
-                </Link>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <input type={voirMDP ? 'text' : 'password'} value={motDePasse} onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" required style={{ ...inp, paddingRight: 44 }}
-                  onFocus={e => { e.target.style.borderColor = '#C0321A'; e.target.style.boxShadow = '0 0 0 3px rgba(192,50,26,0.1)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'rgba(0,0,0,0.12)'; e.target.style.boxShadow = 'none'; }} />
-                <button type="button" onClick={() => setVoirMDP(v => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(0,0,0,0.35)', fontSize: 14 }}>
-                  {voirMDP ? '🙈' : '👁️'}
-                </button>
-              </div>
-            </div>
-
-            {erreur && (
-              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626', fontFamily: "'Helvetica Neue',Arial,sans-serif" }}>
-                ⚠ {erreur}
-              </div>
-            )}
-
-            <button type="submit" disabled={chargement} style={{
-              background: chargement ? 'rgba(192,50,26,0.5)' : 'linear-gradient(135deg, #C0321A, #A02818)',
-              color: 'white', padding: '14px', borderRadius: 12, border: 'none',
-              fontWeight: 700, fontSize: 15, cursor: chargement ? 'not-allowed' : 'pointer',
-              fontFamily: "'Helvetica Neue',Arial,sans-serif",
-              boxShadow: '0 4px 16px rgba(192,50,26,0.3)', letterSpacing: '0.02em',
-            }}>
-              {chargement ? '⏳ Connexion…' : 'Se connecter →'}
+          {/* Mot de passe */}
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontSize: 18, opacity: 0.6 }}>🔒</span>
+            <input
+              type={voirMDP ? 'text' : 'password'} value={motDePasse}
+              onChange={e => setMotDePasse(e.target.value)}
+              placeholder="Mot de passe" required
+              style={{ ...inpStyle, paddingRight: 48 }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.5)'; e.target.style.background = 'rgba(255,255,255,0.12)'; }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)'; }}
+            />
+            <button type="button" onClick={() => setVoirMDP(v => !v)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 16 }}>
+              {voirMDP ? '🙈' : '👁'}
             </button>
+          </div>
 
-            <div style={{ position: 'relative', textAlign: 'center' }}>
-              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(0,0,0,0.08)' }} />
-              <span style={{ position: 'relative', background: 'white', padding: '0 12px', fontSize: 12, color: 'rgba(0,0,0,0.35)', fontFamily: "'Helvetica Neue',Arial,sans-serif" }}>ou</span>
+          {/* Mot de passe oublié */}
+          <div style={{ textAlign: 'center' }}>
+            <Link href="/auth/mot-de-passe-oublie" style={{
+              fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 14,
+              color: 'rgba(255,255,255,0.55)', textDecoration: 'none',
+              transition: 'color 0.2s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+              Mot de passe oublié ?
+            </Link>
+          </div>
+
+          {/* Erreur */}
+          {erreur && (
+            <div style={{ background: 'rgba(220,38,38,0.2)', border: '1px solid rgba(220,38,38,0.4)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#FCA5A5', fontFamily: "'Helvetica Neue',Arial,sans-serif", textAlign: 'center' }}>
+              ⚠ {erreur}
             </div>
+          )}
 
-            <a href="https://wa.me/50999999999" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(37,211,102,0.08)', border: '1.5px solid rgba(37,211,102,0.3)', color: '#1a8a44', padding: '12px', borderRadius: 12, textDecoration: 'none', fontWeight: 600, fontSize: 13, fontFamily: "'Helvetica Neue',Arial,sans-serif" }}>
-              💬 Connexion via WhatsApp
-            </a>
+          {/* Bouton Se connecter */}
+          <button type="submit" disabled={chargement} style={{
+            width: '100%', padding: '18px',
+            background: chargement
+              ? 'rgba(220,85,20,0.6)'
+              : 'linear-gradient(135deg, #E8590C, #C0440A)',
+            color: 'white', border: 'none',
+            borderRadius: 100,
+            fontFamily: "'Helvetica Neue',Arial,sans-serif",
+            fontWeight: 700, fontSize: 18,
+            cursor: chargement ? 'not-allowed' : 'pointer',
+            letterSpacing: '0.02em',
+            boxShadow: '0 8px 32px rgba(220,85,20,0.45)',
+            transition: 'transform 0.15s, box-shadow 0.15s',
+            marginTop: 4,
+          }}
+            onMouseEnter={e => { if (!chargement) { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 40px rgba(220,85,20,0.55)'; } }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(220,85,20,0.45)'; }}
+          >
+            {chargement ? '⏳ Connexion…' : 'Se connecter'}
+          </button>
 
-            <div style={{ textAlign: 'center', paddingTop: 4 }}>
-              <span style={{ fontSize: 13, color: 'rgba(0,0,0,0.45)', fontFamily: "'Helvetica Neue',Arial,sans-serif" }}>Pas encore de compte ? </span>
-              <Link href="/auth/inscription" style={{ color: '#C0321A', fontWeight: 700, textDecoration: 'none', fontSize: 13, fontFamily: "'Helvetica Neue',Arial,sans-serif" }}>
-                S'inscrire
-              </Link>
-            </div>
-          </form>
-        </div>
+          {/* Lien inscription */}
+          <p style={{ textAlign: 'center', fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 14, color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+            Pas encore de compte ?{' '}
+            <Link href="/auth/inscription" style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 700, textDecoration: 'none' }}>
+              S'inscrire gratuitement
+            </Link>
+          </p>
+        </form>
       </div>
 
-      {/* Partenaires en bas */}
+      {/* ── Sponsors ── */}
       <div style={{
-        position: 'absolute', bottom: 24, left: 0, right: 0,
-        display: 'flex', gap: 12, justifyContent: 'center',
-        flexWrap: 'wrap', padding: '0 24px', zIndex: 1,
+        position: 'relative', zIndex: 1,
+        marginTop: 48, paddingBottom: 32,
       }}>
-        {['AyiboPost', 'YWCA Haïti', 'Decathlon', 'Debat Haiti'].map(p => (
-          <span key={p} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.35)', padding: '4px 12px', borderRadius: 100, fontFamily: "'Helvetica Neue',Arial,sans-serif", fontSize: 11 }}>{p}</span>
-        ))}
+        <div style={{ width: '80%', height: 1, background: 'rgba(255,255,255,0.1)', margin: '0 auto 24px' }}/>
+        <div style={{
+          display: 'flex', gap: 12, justifyContent: 'center',
+          flexWrap: 'wrap', padding: '0 clamp(16px,4vw,48px)',
+        }}>
+          {[
+            { nom: 'AyiboPost', bg: 'white', color: '#0D1B2A', bold: true },
+            { nom: 'YWCA Haïti', bg: 'white', color: '#0D1B2A', icon: '📍' },
+            { nom: 'DECATHLON', bg: '#006FBA', color: 'white', bold: true },
+            { nom: 'eiffortic Haïti', bg: 'white', color: '#0D1B2A' },
+            { nom: 'Sun Auto', bg: 'white', color: '#0D1B2A', icon: '🌟' },
+          ].map(p => (
+            <div key={p.nom} style={{
+              background: p.bg, color: p.color,
+              padding: '10px 20px', borderRadius: 8,
+              fontFamily: "'Helvetica Neue',Arial,sans-serif",
+              fontSize: 13, fontWeight: p.bold ? 800 : 500,
+              display: 'flex', alignItems: 'center', gap: 6,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
+              letterSpacing: p.bold ? '-0.02em' : 'normal',
+            }}>
+              {p.icon && <span style={{ fontSize: 14 }}>{p.icon}</span>}
+              {p.nom}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
